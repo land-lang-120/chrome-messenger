@@ -1,0 +1,93 @@
+/* Chrome Messenger — Global styles */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background: #FFFFFF; color: #2A2F38;
+  min-height: 100vh; overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button { font-family: inherit; outline: none; }
+button:active { transform: scale(0.98); }
+input, select, textarea { font-family: inherit; font-size: 16px; }
+
+/* Splash — visible before React mounts */
+#cm-splash {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #30D79C; /* mint primary — loaded before theme */
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px;
+  transition: opacity 0.5s ease;
+}
+#cm-splash.hide { opacity: 0; pointer-events: none; }
+
+#cm-splash .orb {
+  position: absolute; width: 200px; height: 200px; border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  filter: blur(40px);
+  animation: cmOrbFloat 4s ease-in-out infinite;
+}
+#cm-splash .orb.o1 { top: 10%; left: 15%; }
+#cm-splash .orb.o2 { bottom: 15%; right: 10%; animation-delay: 2s; }
+#cm-splash .orb.o3 { top: 50%; right: 25%; animation-delay: 1s; width: 140px; height: 140px; }
+@keyframes cmOrbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -30px) scale(1.1); }
+}
+
+#cm-splash .logo-wrap {
+  width: 110px; height: 110px; border-radius: 50%;
+  background: white;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+  animation: cmLogoFloat 2.5s ease-in-out infinite;
+  z-index: 1;
+}
+@keyframes cmLogoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+#cm-splash .title {
+  color: white; font-size: 24px; font-weight: 800;
+  letter-spacing: -0.5px; z-index: 1; opacity: 0.95;
+}
+
+#cm-splash .dots {
+  display: flex; gap: 6px; z-index: 1; margin-top: 4px;
+}
+#cm-splash .dots .d {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  animation: cmDot 1.2s ease-in-out infinite;
+}
+#cm-splash .dots .d:nth-child(2) { animation-delay: 0.2s; }
+#cm-splash .dots .d:nth-child(3) { animation-delay: 0.4s; }
+@keyframes cmDot {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.4); background: white; }
+}
+
+/* Animations */
+@keyframes cmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cmSlideUp {
+  from { transform: translateY(40px); }
+  to { transform: translateY(0); }
+}
+
+/* Focus */
+button:focus-visible {
+  outline: 2px solid #30D79C;
+  outline-offset: 2px;
+}
+
+/* Scrollbar (subtle) */
+::-webkit-scrollbar { width: 0; height: 0; }
