@@ -36,6 +36,8 @@ function weekDates(ref: Date): Date[] {
 export interface TodoScreenProps {
   readonly onThemeTap: () => void;
   readonly onOpenSettings: () => void;
+  readonly onOpenQrScanner: () => void;
+  readonly onOpenEvents: () => void;
 }
 
 export function TodoScreen(props: TodoScreenProps) {
@@ -171,6 +173,36 @@ export function TodoScreen(props: TodoScreenProps) {
             })}
           </div>
         )}
+      </div>
+
+      {/* Acces rapides Events + QR Scanner */}
+      <div style={{ padding: '0 16px 12px', display: 'flex', gap: 10 }}>
+        <button
+          type="button"
+          onClick={props.onOpenEvents}
+          style={{
+            flex: 1, padding: '12px 14px', borderRadius: 14,
+            background: theme.primarySoft, border: 'none',
+            color: theme.primaryDark, fontWeight: 700, fontSize: 13,
+            fontFamily: 'inherit', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}
+        >
+          <span aria-hidden>🎉</span> Evenements
+        </button>
+        <button
+          type="button"
+          onClick={props.onOpenQrScanner}
+          style={{
+            flex: 1, padding: '12px 14px', borderRadius: 14,
+            background: 'var(--cm-surface)', border: '1px solid var(--cm-line)',
+            color: 'var(--cm-title)', fontWeight: 700, fontSize: 13,
+            fontFamily: 'inherit', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}
+        >
+          <span aria-hidden>📷</span> Scanner QR
+        </button>
       </div>
 
       {/* Taches du jour */}

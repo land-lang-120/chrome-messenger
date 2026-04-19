@@ -13,6 +13,8 @@ export interface SettingsScreenProps {
   readonly onBack: () => void;
   readonly onLangOpen: () => void;
   readonly onThemeTap: () => void;
+  readonly onContactsOpen?: () => void;
+  readonly onEventsOpen?: () => void;
 }
 
 export function SettingsScreen(props: SettingsScreenProps) {
@@ -50,6 +52,10 @@ export function SettingsScreen(props: SettingsScreenProps) {
       </section>
 
       <div style={{ padding: '0 16px' }}>
+        <H>Mes donnees</H>
+        <Row icon="👥" label="Contacts" onClick={props.onContactsOpen} />
+        <Row icon="🎉" label="Evenements" onClick={props.onEventsOpen} />
+
         <H>Apparence</H>
         <Row icon="🎨" label={t('theme')} value="Menthe" onClick={props.onThemeTap} />
         <Row icon="🌐" label={t('language')} value={activeLang.name} onClick={props.onLangOpen} />
