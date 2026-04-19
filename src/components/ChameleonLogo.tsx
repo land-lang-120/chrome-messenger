@@ -27,9 +27,12 @@ export function ChameleonLogo(props: ChameleonLogoProps) {
   const { theme } = useTheme();
   const size = props.size ?? 48;
   const color = props.color ?? theme.primary;
-  const showBg = props.showBg !== false;
+  // Mode sombre : le fond blanc du logo disparait automatiquement
+  // (il devient transparent pour se fondre dans le theme)
+  const showBg = props.showBg !== false && !theme.isDark;
   const bgFill = props.bgFill ?? '#FEFEFE';
-  const eyeFill = props.eyeFill ?? '#F8FCFA';
+  // En mode sombre, le reflet de l'oeil doit aussi etre sombre pour contraste
+  const eyeFill = props.eyeFill ?? (theme.isDark ? '#0A0E14' : '#F8FCFA');
 
   return (
     <svg

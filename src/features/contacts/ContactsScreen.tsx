@@ -14,6 +14,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { getContacts } from '../../services/localDb';
 import { CONTACT_CATEGORIES, type ContactCategory } from '../../types/contact';
 import { AddContactSheet } from './AddContactSheet';
+import { CreateGroupSheet } from './CreateGroupSheet';
 import { EditContactSheet } from './EditContactSheet';
 import type { Contact } from '../../types/contact';
 
@@ -40,6 +41,7 @@ const CATEGORY_EMOJIS: Record<ContactCategory, string> = {
 export interface ContactsScreenProps {
   readonly onBack: () => void;
   readonly onOpenConversation: (contactUid: string) => void;
+  readonly onOpenConvById?: (convId: string) => void;
 }
 
 export function ContactsScreen(props: ContactsScreenProps) {
@@ -48,6 +50,7 @@ export function ContactsScreen(props: ContactsScreenProps) {
   const [filter, setFilter] = useState<Filter>('all');
   const [q, setQ] = useState('');
   const [addOpen, setAddOpen] = useState(false);
+  const [groupOpen, setGroupOpen] = useState(false);
   const [editing, setEditing] = useState<Contact | null>(null);
   const [refresh, setRefresh] = useState(0);
 
@@ -77,6 +80,23 @@ export function ContactsScreen(props: ContactsScreenProps) {
         title="Contacts"
         hideLogo
       />
+
+      {/* Raccourci Creer un groupe */}
+      <div style={{ padding: '0 16px 12px' }}>
+        <button
+          type="button"
+          onClick={() => setGroupOpen(true)}
+          style={{
+            width: '100%', padding: '12px 14px', borderRadius: 14,
+            background: theme.primarySoft, color: theme.primaryDark,
+            border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            fontSize: 14, fontWeight: 700,
+            display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center',
+          }}
+        >
+          <span aria-hidden>👥</span> Creer un groupe
+        </button>
+      </div>
 
       <div style={{ padding: '0 16px 12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--cm-surface)', borderRadius: 16, padding: '10px 14px' }}>
@@ -165,6 +185,12 @@ export function ContactsScreen(props: ContactsScreenProps) {
         contact={editing}
         onClose={() => setEditing(null)}
         onUpdated={() => setRefresh((r) => r + 1)}
+      />
+
+      <CreateGroupSheet
+        open={groupOpen}
+        onClose={() => setGroupOpen(false)}
+        onCreated={(convId) => { props.onOpenConvById?.(convId); }}
       />
 
       <AddContactSheet

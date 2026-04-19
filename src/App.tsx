@@ -137,6 +137,7 @@ function AppShell() {
       <ContactsScreen
         onBack={() => setView({ kind: 'tab' })}
         onOpenConversation={openConvWithContact}
+        onOpenConvById={(convId) => setView({ kind: 'chat', convId })}
       />
     );
   }
