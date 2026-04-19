@@ -1,0 +1,111 @@
+name: Build Android APK (TWA)
+
+# Génère un APK signé via Bubblewrap à chaque push sur main, et publie
+# une GitHub Release téléchargeable directement depuis le site CloneX.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'twa-manifest.json'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch: {} # lancement manuel
+
+permissions:
+  contents: write # pour créer/uploader les releases
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli@latest
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android cmdline-tools + build-tools
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "build-tools;33.0.2" "platforms;android-33" "platform-tools"
+
+      # Génère la clé de signature (persistée dans les secrets GH Actions apres 1er build)
+      - name: Generate keystore
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'chromemessenger2026' }}
+        run: |
+          keytool -genkey -v \
+            -keystore android.keystore \
+            -alias android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -keypass "$KEYSTORE_PASSWORD" \
+            -dname "CN=Chrome Messenger,OU=CloneX Studio,O=CloneX,L=Yaounde,ST=Centre,C=CM"
+
+      - name: Bubblewrap init from manifest
+        run: |
+          bubblewrap init \
+            --manifest "https://land-lang-120.github.io/chrome-messenger/manifest.json" \
+            --directory twa \
+            --chromeosonly false || true
+
+      - name: Copy our custom twa-manifest
+        run: cp twa-manifest.json twa/twa-manifest.json
+
+      - name: Build APK + AAB
+        working-directory: twa
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'chromemessenger2026' }}
+        run: |
+          cp ../android.keystore ./android.keystore
+          bubblewrap build \
+            --skipPwaValidation \
+            --signingKeyPath ./android.keystore \
+            --signingKeyAlias android
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p release
+          cp twa/app-release-signed.apk release/chrome-messenger.apk || true
+          cp twa/app-release-bundle.aab release/chrome-messenger.aab || true
+          ls -la release/
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-messenger-apk
+          path: release/
+
+      - name: Create/Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-v1.0.0
+          name: Chrome Messenger APK v1.0.0
+          body: |
+            📱 **APK Android signé prêt à installer**
+
+            Télécharge `chrome-messenger.apk` ci-dessous, puis :
+            1. Active "Sources inconnues" dans les paramètres Android
+            2. Ouvre le fichier `.apk` et installe
+
+            💎 Pour le Play Store : utilise `chrome-messenger.aab`
+
+            Tous les messages restent chiffrés end-to-end (ECDH P-256 + AES-GCM).
+          files: |
+            release/chrome-messenger.apk
+            release/chrome-messenger.aab
+          make_latest: true

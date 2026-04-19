@@ -1,0 +1,49 @@
+{
+  "packageId": "com.clonexstudio.chromemessenger",
+  "host": "land-lang-120.github.io",
+  "name": "Chrome Messenger",
+  "launcherName": "Chrome Messenger",
+  "display": "standalone",
+  "themeColor": "#30D79C",
+  "themeColorDark": "#0A0E14",
+  "navigationColor": "#30D79C",
+  "navigationColorDark": "#0A0E14",
+  "navigationDividerColor": "#30D79C",
+  "navigationDividerColorDark": "#0A0E14",
+  "backgroundColor": "#FFFFFF",
+  "enableNotifications": true,
+  "startUrl": "/chrome-messenger/",
+  "iconUrl": "https://land-lang-120.github.io/chrome-messenger/icons/icon-512.svg",
+  "maskableIconUrl": "https://land-lang-120.github.io/chrome-messenger/icons/icon-512.svg",
+  "monochromeIconUrl": "https://land-lang-120.github.io/chrome-messenger/icons/icon-192.svg",
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://land-lang-120.github.io/chrome-messenger/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": { "enabled": true },
+    "playBilling": { "enabled": false }
+  },
+  "alphaDependencies": { "enabled": false },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://land-lang-120.github.io/chrome-messenger/",
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "appVersionName": "1.0.0",
+  "appVersion": 1,
+  "shareTarget": {
+    "action": "/chrome-messenger/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  }
+}
