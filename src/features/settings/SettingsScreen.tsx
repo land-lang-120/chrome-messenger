@@ -15,6 +15,8 @@ export interface SettingsScreenProps {
   readonly onThemeTap: () => void;
   readonly onContactsOpen?: () => void;
   readonly onEventsOpen?: () => void;
+  readonly onEditProfileOpen?: () => void;
+  readonly onDndOpen?: () => void;
 }
 
 export function SettingsScreen(props: SettingsScreenProps) {
@@ -35,12 +37,15 @@ export function SettingsScreen(props: SettingsScreenProps) {
     <div style={{ paddingBottom: 60, background: 'var(--cm-bg)' }}>
       <Header left={<IconButton label={t('back')} onClick={props.onBack}><IconBack /></IconButton>} onLogoTap={props.onThemeTap} />
 
-      {/* Card profil */}
-      <section
+      {/* Card profil (cliquable -> EditProfile) */}
+      <button
+        type="button"
+        onClick={props.onEditProfileOpen}
         style={{
           margin: '6px 16px 16px', padding: 18, borderRadius: 18,
           background: 'var(--cm-surface)', border: '1px solid var(--cm-line)',
           display: 'flex', alignItems: 'center', gap: 14,
+          width: 'calc(100% - 32px)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
         }}
       >
         <Avatar name={user?.name ?? '?'} size={60} />
@@ -49,7 +54,8 @@ export function SettingsScreen(props: SettingsScreenProps) {
           <div style={{ fontSize: 13, color: 'var(--cm-sub)', marginTop: 3 }}>{user?.phone ?? '—'}</div>
           {user?.bio && <div style={{ fontSize: 12, color: 'var(--cm-muted)', marginTop: 3 }}>{user.bio}</div>}
         </div>
-      </section>
+        <span style={{ color: 'var(--cm-muted)', fontSize: 18 }} aria-hidden>›</span>
+      </button>
 
       <div style={{ padding: '0 16px' }}>
         <H>Mes donnees</H>
@@ -59,6 +65,9 @@ export function SettingsScreen(props: SettingsScreenProps) {
         <H>Apparence</H>
         <Row icon="🎨" label={t('theme')} value="Menthe" onClick={props.onThemeTap} />
         <Row icon="🌐" label={t('language')} value={activeLang.name} onClick={props.onLangOpen} />
+
+        <H>Disponibilite</H>
+        <Row icon="🌙" label="Ne pas deranger (Pro)" onClick={props.onDndOpen} />
 
         <H>Confidentialite & Securite</H>
         <Row icon={<IconLock width={16} height={16} />} label="Chiffrement bout en bout" value="Actif" />

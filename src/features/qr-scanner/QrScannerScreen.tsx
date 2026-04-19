@@ -8,7 +8,7 @@ import { useState } from 'react';
 
 import { Button } from '../../components/Button';
 import { IconButton } from '../../components/IconButton';
-import { IconBack, IconClose } from '../../components/Icons';
+import { IconBack, IconCheck, IconClose } from '../../components/Icons';
 import { useI18n } from '../../contexts/I18nContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -29,7 +29,7 @@ export function QrScannerScreen({ onBack }: QrScannerScreenProps) {
     const ev = getEvents().find((e) => e.qrSeed === seed.trim());
     if (ev) {
       setScanned({ found: true, eventTitle: ev.title });
-      toast.show(`Invitation trouvee : ${ev.title}`, 'success');
+      toast.show('Invitation valide', 'success');
     } else {
       setScanned({ found: false });
       toast.show('QR code non reconnu', 'warning');
@@ -93,19 +93,62 @@ export function QrScannerScreen({ onBack }: QrScannerScreenProps) {
       `}</style>
 
       {/* Feedback scan */}
-      {scanned && (
+      {scanned && scanned.found && (
         <div
           style={{
-            margin: '0 16px 10px', padding: 12, borderRadius: 12,
-            background: scanned.found ? theme.primary : '#FF4757',
-            color: '#FFF', fontSize: 13, fontWeight: 700, textAlign: 'center',
+            position: 'fixed', inset: 0, zIndex: 2000,
+            background: 'rgba(10,14,20,0.92)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: 18,
           }}
         >
-          {scanned.found ? `✓ ${scanned.eventTitle}` : '✗ QR code invalide'}
+          {/* Grand cercle avec check en couleur du theme */}
+          <div
+            style={{
+              width: 120, height: 120, borderRadius: '50%',
+              background: theme.primary,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: `0 0 0 8px ${theme.primarySoft}, 0 20px 60px ${theme.primary}55`,
+              animation: 'cm-check-pop 0.4s ease-out',
+            }}
+          >
+            <IconCheck width={64} height={64} style={{ color: '#FFF' }} />
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: '#FFF' }}>Invitation valide</div>
           <button
             type="button"
             onClick={() => setScanned(null)}
-            style={{ marginLeft: 10, background: 'transparent', border: 'none', color: '#FFF', cursor: 'pointer' }}
+            style={{
+              marginTop: 10, padding: '12px 28px', borderRadius: 14,
+              background: theme.primary, color: '#FFF',
+              border: 'none', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
+            }}
+          >
+            OK
+          </button>
+          <style>{`@keyframes cm-check-pop {
+            0% { transform: scale(0.3); opacity: 0; }
+            60% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }`}</style>
+        </div>
+      )}
+
+      {scanned && !scanned.found && (
+        <div
+          style={{
+            margin: '0 16px 10px', padding: 12, borderRadius: 12,
+            background: '#FF4757', color: '#FFF', fontSize: 13, fontWeight: 700,
+            textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+          }}
+        >
+          ✗ QR code invalide
+          <button
+            type="button"
+            onClick={() => setScanned(null)}
+            style={{ background: 'transparent', border: 'none', color: '#FFF', cursor: 'pointer' }}
+            aria-label="close"
           >
             <IconClose width={16} height={16} />
           </button>

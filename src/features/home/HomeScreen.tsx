@@ -228,17 +228,17 @@ export function HomeScreen(props: HomeScreenProps) {
                       <div
                         style={{
                           display: 'flex', alignItems: 'center', gap: 6,
-                          fontSize: 13, fontWeight: 700, color: 'var(--cm-title)',
+                          fontSize: 14, fontWeight: 800, color: 'var(--cm-title)',
                         }}
                       >
                         {c.pinned && <span style={{ fontSize: 11 }} aria-hidden>📌</span>}
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--cm-sub)', marginTop: 2 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--cm-sub)', marginTop: 2 }}>
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {lastMsg?.plaintext ?? '—'}
                         </span>
-                        {lastMsg?.senderId === user?.uid && <IconCheck width={14} height={14} style={{ color: 'var(--cm-muted)' }} />}
+                        {lastMsg?.senderId === user?.uid && <IconCheck width={12} height={12} style={{ color: 'var(--cm-muted)' }} />}
                       </div>
                     </div>
                     <span style={{ fontSize: 11, color: 'var(--cm-muted)', fontWeight: 600 }}>

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { LS_KEYS } from '../config';
 import { lsGet, lsSet } from '../services/storage';
@@ -7,6 +7,7 @@ import {
   THEME_DARK_SURFACES,
   THEME_LIGHT_SURFACES,
   type Theme,
+  type ThemeColors,
   type ThemeId,
 } from '../types/theme';
 
@@ -16,9 +17,13 @@ interface ThemeContextValue {
   readonly setThemeId: (id: ThemeId) => void;
   readonly darkMode: boolean;
   readonly setDarkMode: (v: boolean) => void;
+  /** Active la palette personnalisée Pro (primary/primaryDark/primarySoft). */
+  readonly setCustomTheme: (colors: ThemeColors) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+const CUSTOM_KEY = `${LS_KEYS.theme}_custom`;
 
 /** Applique les CSS custom properties au root DOM pour propager partout. */
 function applyCssVars(theme: Theme): void {
@@ -42,28 +47,50 @@ function applyCssVars(theme: Theme): void {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [themeId, setThemeId] = useState<ThemeId>(() => lsGet<ThemeId>(LS_KEYS.theme, 'mint'));
   const [darkMode, setDarkMode] = useState<boolean>(() => lsGet<boolean>(`${LS_KEYS.theme}_dark`, false));
+  const [custom, setCustom] = useState<ThemeColors | null>(() => lsGet<ThemeColors | null>(CUSTOM_KEY, null));
+
+  // Charbon : désactive le dark mode (indiscernable)
+  const effectiveDarkMode = themeId === 'charcoal' ? false : darkMode;
 
   const theme = useMemo<Theme>(() => {
-    if (darkMode) return { ...THEMES.dark, primary: THEMES[effectiveId(themeId)].primary };
-    return THEMES[effectiveId(themeId)];
-  }, [themeId, darkMode]);
+    // Priorité : custom > dark override > preset
+    if (themeId === 'custom' && custom) {
+      return {
+        id: 'custom',
+        name: 'Personnalise',
+        primary: custom.primary,
+        primaryDark: custom.primaryDark,
+        primarySoft: custom.primarySoft,
+        isDark: effectiveDarkMode,
+      };
+    }
+    const base = THEMES[effectiveId(themeId)];
+    if (effectiveDarkMode) return { ...THEMES.dark, primary: base.primary, primaryDark: base.primaryDark, primarySoft: base.primarySoft };
+    return base;
+  }, [themeId, effectiveDarkMode, custom]);
 
   useEffect(() => {
     applyCssVars(theme);
     lsSet(LS_KEYS.theme, themeId);
-    lsSet(`${LS_KEYS.theme}_dark`, darkMode);
-  }, [theme, themeId, darkMode]);
+    lsSet(`${LS_KEYS.theme}_dark`, effectiveDarkMode);
+  }, [theme, themeId, effectiveDarkMode]);
+
+  const setCustomTheme = useCallback((colors: ThemeColors) => {
+    setCustom(colors);
+    lsSet(CUSTOM_KEY, colors);
+    setThemeId('custom');
+  }, []);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, themeId, setThemeId, darkMode, setDarkMode }),
-    [theme, themeId, darkMode],
+    () => ({ theme, themeId, setThemeId, darkMode: effectiveDarkMode, setDarkMode, setCustomTheme }),
+    [theme, themeId, effectiveDarkMode, setCustomTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 /**
- * Garantit qu'on a toujours un ThemeId valide dans THEMES (custom redirige vers mint pour v1).
+ * Garantit qu'on a toujours un ThemeId valide dans THEMES (fallback vers mint).
  */
 function effectiveId(id: ThemeId): Exclude<ThemeId, 'custom'> {
   if (id === 'custom') return 'mint';

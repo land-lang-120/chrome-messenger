@@ -20,6 +20,8 @@ import { NotifsScreen } from './features/notifs/NotifsScreen';
 import { OnboardingScreen } from './features/onboarding/OnboardingScreen';
 import { PremiumScreen } from './features/premium/PremiumScreen';
 import { QrScannerScreen } from './features/qr-scanner/QrScannerScreen';
+import { DndScreen } from './features/settings/DndScreen';
+import { EditProfileScreen } from './features/settings/EditProfileScreen';
 import { LanguageScreen } from './features/settings/LanguageScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
 import { AddStorySheet } from './features/stories/AddStorySheet';
@@ -28,6 +30,7 @@ import { ThemePickerSheet } from './features/theme-picker/ThemePickerSheet';
 import { TodoScreen } from './features/todolist/TodoScreen';
 import { initFirebase } from './services/firebase';
 import { getConversations, seedIfNeeded, setConversations, unreadNotifsCount } from './services/localDb';
+import { isPro, startTrialIfEligible } from './services/premium';
 
 initFirebase();
 
@@ -42,7 +45,9 @@ type View =
   | { kind: 'contacts' }
   | { kind: 'events' }
   | { kind: 'qr-scanner' }
-  | { kind: 'story'; storyId: string };
+  | { kind: 'story'; storyId: string }
+  | { kind: 'edit-profile' }
+  | { kind: 'dnd' };
 
 function AppShell() {
   const { t } = useI18n();
@@ -54,7 +59,11 @@ function AppShell() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    if (user) seedIfNeeded(user.uid);
+    if (user) {
+      seedIfNeeded(user.uid);
+      // Active l'essai gratuit Pro de 30j si jamais démarré (1er lancement après install)
+      startTrialIfEligible();
+    }
   }, [user]);
 
   if (!onboarded || !user) {
@@ -105,6 +114,8 @@ function AppShell() {
           onThemeTap={() => setThemeOpen(true)}
           onContactsOpen={() => setView({ kind: 'contacts' })}
           onEventsOpen={() => setView({ kind: 'events' })}
+          onEditProfileOpen={() => setView({ kind: 'edit-profile' })}
+          onDndOpen={() => setView({ kind: 'dnd' })}
         />
         <ThemePickerSheet open={themeOpen} onClose={() => setThemeOpen(false)} />
       </>
@@ -131,6 +142,12 @@ function AppShell() {
   }
   if (view.kind === 'events') {
     return <EventsScreen onBack={() => setView({ kind: 'tab' })} />;
+  }
+  if (view.kind === 'edit-profile') {
+    return <EditProfileScreen onBack={() => setView({ kind: 'settings' })} />;
+  }
+  if (view.kind === 'dnd') {
+    return <DndScreen onBack={() => setView({ kind: 'settings' })} isPro={isPro()} />;
   }
 
   // Vues onglet principales (avec nav bar)

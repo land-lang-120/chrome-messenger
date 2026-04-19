@@ -14,6 +14,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { getContacts } from '../../services/localDb';
 import { CONTACT_CATEGORIES, type ContactCategory } from '../../types/contact';
 import { AddContactSheet } from './AddContactSheet';
+import { EditContactSheet } from './EditContactSheet';
+import type { Contact } from '../../types/contact';
 
 type Filter = ContactCategory | 'all' | 'favorites';
 
@@ -46,6 +48,7 @@ export function ContactsScreen(props: ContactsScreenProps) {
   const [filter, setFilter] = useState<Filter>('all');
   const [q, setQ] = useState('');
   const [addOpen, setAddOpen] = useState(false);
+  const [editing, setEditing] = useState<Contact | null>(null);
   const [refresh, setRefresh] = useState(0);
 
   const contacts = useMemo(() => {
@@ -113,16 +116,22 @@ export function ContactsScreen(props: ContactsScreenProps) {
           <li style={{ color: 'var(--cm-muted)', textAlign: 'center', padding: 40 }}>Aucun contact</li>
         )}
         {contacts.map((c) => (
-          <li key={c.contactUid}>
+          <li
+            key={c.contactUid}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '12px 0', borderBottom: '1px solid var(--cm-line)',
+            }}
+          >
             <button
               type="button"
               onClick={() => props.onOpenConversation(c.contactUid)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 12,
-                width: '100%', padding: '12px 0',
+                flex: 1, minWidth: 0,
                 border: 'none', background: 'transparent',
-                borderBottom: '1px solid var(--cm-line)',
                 cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                padding: 0,
               }}
             >
               <Avatar name={c.name} size={40} />
@@ -135,9 +144,28 @@ export function ContactsScreen(props: ContactsScreenProps) {
                 </div>
               </div>
             </button>
+            <button
+              type="button"
+              onClick={() => setEditing(c)}
+              aria-label="Modifier"
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: 'var(--cm-surface)', border: 'none',
+                cursor: 'pointer', fontSize: 14, color: 'var(--cm-sub)',
+              }}
+            >
+              ✎
+            </button>
           </li>
         ))}
       </ul>
+
+      <EditContactSheet
+        open={editing !== null}
+        contact={editing}
+        onClose={() => setEditing(null)}
+        onUpdated={() => setRefresh((r) => r + 1)}
+      />
 
       <AddContactSheet
         open={addOpen}

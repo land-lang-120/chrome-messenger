@@ -3,6 +3,8 @@ import { IconCheck } from '../../components/Icons';
 import { useI18n } from '../../contexts/I18nContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { THEMES, type ThemeId } from '../../types/theme';
+import { ColorPickerSlider } from './ColorPickerSlider';
+import { isPro } from '../../services/premium';
 
 export interface ThemePickerSheetProps {
   readonly open: boolean;
@@ -87,6 +89,11 @@ export function ThemePickerSheet({ open, onClose }: ThemePickerSheetProps) {
             }}
           />
         </button>
+      </div>
+
+      {/* Slider couleur personnalisee (Pro) */}
+      <div style={{ marginTop: 18 }}>
+        <ColorPickerSlider isPro={isPro()} />
       </div>
     </BottomSheet>
   );

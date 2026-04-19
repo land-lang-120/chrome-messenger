@@ -1,6 +1,10 @@
 /**
  * StoryViewer — plein écran style WhatsApp/Instagram.
- * Affiche le statut avec progress bar auto-avance, tap gauche/droite, swipe pour fermer.
+ *
+ * Convention (WhatsApp-like) :
+ * - Chaque OWNER a son groupe de stories (1 utilisateur = 1 session de visionnage)
+ * - Les progress bars en haut = nombre d'ELEMENTS DE CE OWNER (pas total global)
+ * - On passe au owner suivant quand on a fini ses stories
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -12,7 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getActiveStories, getContactById, setStories, getStories } from '../../services/localDb';
 import type { Story } from '../../types/story';
 
-const STORY_DURATION_MS = 5000; // 5s par statut
+const STORY_DURATION_MS = 5000; // 5s par element
 
 export interface StoryViewerProps {
   readonly initialStoryId: string;
@@ -21,34 +25,84 @@ export interface StoryViewerProps {
 
 export function StoryViewer({ initialStoryId, onClose }: StoryViewerProps) {
   const { user } = useAuth();
-  const stories = useMemo(() => getActiveStories(), []);
-  const startIdx = Math.max(0, stories.findIndex((s) => s.id === initialStoryId));
-  const [idx, setIdx] = useState(startIdx);
+
+  // Regroupe les stories actives par propriétaire, triées par ancienneté
+  const grouped = useMemo(() => {
+    const map = new Map<string, Story[]>();
+    getActiveStories().forEach((s) => {
+      const arr = map.get(s.ownerId) ?? [];
+      arr.push(s);
+      map.set(s.ownerId, arr);
+    });
+    const groups: { ownerId: string; items: Story[] }[] = [];
+    map.forEach((items, ownerId) => {
+      groups.push({ ownerId, items: [...items].sort((a, b) => a.createdAtMs - b.createdAtMs) });
+    });
+    return groups;
+  }, []);
+
+  // Position initiale dans le grouping
+  const initialGroupIdx = Math.max(
+    0,
+    grouped.findIndex((g) => g.items.some((s) => s.id === initialStoryId)),
+  );
+  const initialItemIdx = Math.max(
+    0,
+    (grouped[initialGroupIdx]?.items ?? []).findIndex((s) => s.id === initialStoryId),
+  );
+
+  const [groupIdx, setGroupIdx] = useState(initialGroupIdx);
+  const [itemIdx, setItemIdx] = useState(initialItemIdx);
+  const currentGroup = grouped[groupIdx];
+  const items = currentGroup?.items ?? [];
+  const current: Story | undefined = items[itemIdx];
+
+  // Pour compat : alias pour la story courante (utile dans les effets)
+  const stories = items;
+  const idx = itemIdx;
+  const startIdx = initialItemIdx;
+  void startIdx;
   const [progress, setProgress] = useState(0);
   const rafRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const pausedRef = useRef<boolean>(false);
 
-  const current: Story | undefined = stories[idx];
   const owner = current ? getContactById(current.ownerId) : undefined;
 
   const goNext = useCallback(() => {
-    if (idx < stories.length - 1) {
-      setIdx(idx + 1);
+    // D'abord dans les elements du owner courant
+    if (itemIdx < items.length - 1) {
+      setItemIdx(itemIdx + 1);
       setProgress(0);
       startTimeRef.current = Date.now();
-    } else {
-      onClose();
+      return;
     }
-  }, [idx, stories.length, onClose]);
+    // Sinon on passe au owner suivant
+    if (groupIdx < grouped.length - 1) {
+      setGroupIdx(groupIdx + 1);
+      setItemIdx(0);
+      setProgress(0);
+      startTimeRef.current = Date.now();
+      return;
+    }
+    onClose();
+  }, [itemIdx, items.length, groupIdx, grouped.length, onClose]);
 
   const goPrev = useCallback(() => {
-    if (idx > 0) {
-      setIdx(idx - 1);
+    if (itemIdx > 0) {
+      setItemIdx(itemIdx - 1);
+      setProgress(0);
+      startTimeRef.current = Date.now();
+      return;
+    }
+    if (groupIdx > 0) {
+      setGroupIdx(groupIdx - 1);
+      const prev = grouped[groupIdx - 1];
+      setItemIdx(prev ? prev.items.length - 1 : 0);
       setProgress(0);
       startTimeRef.current = Date.now();
     }
-  }, [idx]);
+  }, [itemIdx, groupIdx, grouped]);
 
   // Mark as viewed
   useEffect(() => {
@@ -62,7 +116,7 @@ export function StoryViewer({ initialStoryId, onClose }: StoryViewerProps) {
     setStories(patched);
   }, [current, user]);
 
-  // Progress animation
+  // Progress animation — un element = 5 secondes
   useEffect(() => {
     startTimeRef.current = Date.now();
     const tick = () => {
@@ -80,7 +134,7 @@ export function StoryViewer({ initialStoryId, onClose }: StoryViewerProps) {
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
-  }, [idx, goNext]);
+  }, [itemIdx, groupIdx, goNext]);
 
   // Keyboard
   useEffect(() => {
