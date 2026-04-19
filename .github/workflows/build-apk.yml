@@ -56,22 +56,29 @@ jobs:
             -keypass "$KEYSTORE_PASSWORD" \
             -dname "CN=Chrome Messenger,OU=CloneX Studio,O=CloneX,L=Yaounde,ST=Centre,C=CM"
 
-      - name: Bubblewrap init from manifest
+      # Init bubblewrap en non-interactif : on place notre twa-manifest dans le
+      # dossier de travail ET on lance la generation du projet Android
+      - name: Prepare TWA directory
         run: |
-          bubblewrap init \
-            --manifest "https://land-lang-120.github.io/chrome-messenger/manifest.json" \
-            --directory twa \
-            --chromeosonly false || true
+          mkdir -p twa
+          cp twa-manifest.json twa/twa-manifest.json
+          cp android.keystore twa/android.keystore
 
-      - name: Copy our custom twa-manifest
-        run: cp twa-manifest.json twa/twa-manifest.json
+      - name: Bubblewrap update (generate Android project from manifest)
+        working-directory: twa
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'chromemessenger2026' }}
+        run: |
+          bubblewrap update --skipVersionUpgrade || bubblewrap init \
+            --manifest "https://land-lang-120.github.io/chrome-messenger/manifest.json" \
+            --directory . \
+            --chromeosonly false || true
 
       - name: Build APK + AAB
         working-directory: twa
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'chromemessenger2026' }}
         run: |
-          cp ../android.keystore ./android.keystore
           bubblewrap build \
             --skipPwaValidation \
             --signingKeyPath ./android.keystore \
