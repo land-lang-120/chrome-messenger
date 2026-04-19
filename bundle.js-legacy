@@ -1,0 +1,3901 @@
+/* Chrome Messenger — Bundled 2026-04-18T15:58:45.024Z */
+
+
+/* ══════ js/config.js ══════ */
+/* Chrome Messenger — Config & Theme Tokens
+ * Chameleon identity: the app changes color dynamically via theme palette.
+ * 8 light themes + 1 dark mode. The active theme updates CSS vars at runtime.
+ */
+
+/* === Theme definitions ===
+ * Each theme ships a primary + primarySoft + text on primary.
+ * Surface/background stays white (light) or near-black (dark mode).
+ * The primary drives: logo, selected nav item, active bubble, FAB, accents.
+ */
+/* Catégories de contacts — pour filtrage événements & organisation du carnet */
+const CM_CONTACT_CATEGORIES = [
+  { id: "all",           label: "Tout",          emoji: "👥" },
+  { id: "famille",       label: "Famille",       emoji: "🏠" },
+  { id: "amis",          label: "Amis",          emoji: "🤝" },
+  { id: "connaissances", label: "Connaissances", emoji: "👋" },
+  { id: "collegues",     label: "Collègues",     emoji: "💼" },
+  { id: "utilitaires",   label: "Utilitaires",   emoji: "🛠️" },
+];
+
+/* 8 theme colors matching the user's designs (screens 34-43).
+ * Order matches the palette layout: Mint, Blue, Orange, Coral, Purple (vif), Lilac (doux), Yellow, Charcoal.
+ * Dark mode is a separate toggle (can combine with any accent — but for v1 it uses Mint accent). */
+const CM_THEMES = {
+  mint: {
+    id: "mint",      name: "Menthe",       emoji: "🌿",
+    primary: "#30D79C", primaryDark: "#1EB380", primarySoft: "#C2F2E0",
+    primaryFaint: "#E8FAF2", onPrimary: "#FFFFFF",
+  },
+  blue: {
+    id: "blue",      name: "Azur",         emoji: "💧",
+    primary: "#4F80FF", primaryDark: "#3B66D9", primarySoft: "#C8D9FF",
+    primaryFaint: "#EAF0FF", onPrimary: "#FFFFFF",
+  },
+  orange: {
+    id: "orange",    name: "Ambre",        emoji: "🔥",
+    primary: "#FF8A4C", primaryDark: "#E06A2C", primarySoft: "#FFD4BB",
+    primaryFaint: "#FFEEE2", onPrimary: "#FFFFFF",
+  },
+  coral: {
+    id: "coral",     name: "Corail",       emoji: "🌸",
+    primary: "#FF4F7A", primaryDark: "#DC3564", primarySoft: "#FFC6D3",
+    primaryFaint: "#FFE7EE", onPrimary: "#FFFFFF",
+  },
+  purple: { /* Vivid purple — screen 37/30 */
+    id: "purple",    name: "Violet",       emoji: "💜",
+    primary: "#A855F7", primaryDark: "#8033D1", primarySoft: "#E1C8FB",
+    primaryFaint: "#F3E8FF", onPrimary: "#FFFFFF",
+  },
+  lilac: { /* Soft lilac — screen 38/31 */
+    id: "lilac",     name: "Lilas",        emoji: "💐",
+    primary: "#C895E8", primaryDark: "#A974CB", primarySoft: "#EAD4F5",
+    primaryFaint: "#F7EEFC", onPrimary: "#FFFFFF",
+  },
+  yellow: {
+    id: "yellow",    name: "Tournesol",    emoji: "☀️",
+    primary: "#FFC940", primaryDark: "#D9A820", primarySoft: "#FFE8A0",
+    primaryFaint: "#FFF8E0", onPrimary: "#3A2E00",
+  },
+  charcoal: {
+    id: "charcoal",  name: "Charbon",      emoji: "⚫",
+    primary: "#2B2D33", primaryDark: "#14161A", primarySoft: "#BEC3CC",
+    primaryFaint: "#EEEFF2", onPrimary: "#FFFFFF",
+  },
+  /* Dark mode — flips surfaces. Uses mint accent by default. */
+  dark: {
+    id: "dark",      name: "Nuit",         emoji: "🌙",
+    primary: "#30D79C", primaryDark: "#1EB380", primarySoft: "#1F3A30",
+    primaryFaint: "#142420", onPrimary: "#FFFFFF",
+    darkMode: true,
+  },
+};
+
+/* Surface tokens for light/dark */
+const CM_SURFACES = {
+  light: {
+    bg:          "#FFFFFF",
+    bg2:         "#F6F7FA",
+    surface:     "#FFFFFF",
+    surface2:    "#F1F3F6",
+    surface3:    "#E8EBEF",
+    line:        "#E5E8EC",
+    line2:       "#CFD4DA",
+    muted:       "#9AA3AE",
+    sub:         "#5F6773",
+    body:        "#2A2F38",
+    title:       "#11141A",
+    white:       "#FFFFFF",
+  },
+  dark: {
+    bg:          "#0B0D10",
+    bg2:         "#111418",
+    surface:     "#151A1F",
+    surface2:    "#1A2028",
+    surface3:    "#222A33",
+    line:        "#2A323C",
+    line2:       "#3A4350",
+    muted:       "#6B7683",
+    sub:         "#9AA3AE",
+    body:        "#D6DCE3",
+    title:       "#F1F4F8",
+    white:       "#FFFFFF",
+  },
+};
+
+/* Active theme helpers — CM._ is the live merged object */
+var CM = {};
+function cmApplyTheme(themeId) {
+  var t = CM_THEMES[themeId] || CM_THEMES.mint;
+  var s = t.darkMode ? CM_SURFACES.dark : CM_SURFACES.light;
+  /* Merge into live CM object (mutated in place so all existing refs update) */
+  Object.keys(s).forEach(function(k){ CM[k] = s[k]; });
+  ["primary","primaryDark","primarySoft","primaryFaint","onPrimary"].forEach(function(k){
+    CM[k] = t[k];
+  });
+  CM.themeId = t.id;
+  CM.themeName = t.name;
+  CM.darkMode = !!t.darkMode;
+  /* Shadows adapt to dark mode */
+  CM.shadow     = t.darkMode ? "0 1px 3px rgba(0,0,0,0.4)"  : "0 1px 3px rgba(15,26,36,0.06)";
+  CM.shadowMd   = t.darkMode ? "0 4px 12px rgba(0,0,0,0.5)" : "0 4px 12px rgba(15,26,36,0.08)";
+  CM.shadowLg   = t.darkMode ? "0 8px 24px rgba(0,0,0,0.6)" : "0 8px 24px rgba(15,26,36,0.12)";
+  CM.shadowGlow = "0 6px 18px " + hexToRgba(t.primary, 0.35);
+  /* Persist */
+  try { localStorage.setItem(CM_KEYS.theme, themeId); } catch (e) {}
+  /* Update meta theme-color for PWA status bar */
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", t.primary);
+  /* Update body bg for consistency with inertia scrolling */
+  document.body && (document.body.style.background = CM.bg);
+}
+
+function hexToRgba(hex, alpha) {
+  hex = String(hex || "").replace("#","");
+  if (hex.length === 3) hex = hex.split("").map(function(c){ return c+c; }).join("");
+  var r = parseInt(hex.substring(0,2), 16) || 0;
+  var g = parseInt(hex.substring(2,4), 16) || 0;
+  var b = parseInt(hex.substring(4,6), 16) || 0;
+  return "rgba(" + r + "," + g + "," + b + "," + (alpha == null ? 1 : alpha) + ")";
+}
+
+/* App identity */
+const CM_APP_NAME    = "Chrome Messenger";
+const CM_APP_SHORT   = "Chrome";
+const CM_VERSION     = "1.0.0";
+
+/* Locale map */
+const CM_LOCALES = {fr:"fr-FR",en:"en-US",es:"es-ES",pt:"pt-BR",de:"de-DE",it:"it-IT",nl:"nl-NL",tr:"tr-TR",ru:"ru-RU",ar:"ar-SA",zh:"zh-CN",ja:"ja-JP",ko:"ko-KR",hi:"hi-IN",sw:"sw-KE",pl:"pl-PL"};
+const cmLocale = () => CM_LOCALES[_cmLang] || "fr-FR";
+
+/* Utils */
+const cmFmtDate = (d) => new Date(d).toLocaleDateString(cmLocale(), { day: "numeric", month: "short" });
+const cmFmtTime = (d) => new Date(d).toLocaleTimeString(cmLocale(), { hour: "2-digit", minute: "2-digit" });
+const cmFmtDayLabel = (d) => {
+  var dt = new Date(d);
+  var today = new Date(); today.setHours(0,0,0,0);
+  var diff = Math.floor((today - dt) / 86400000);
+  if (diff === 0) return cm("today");
+  if (diff === 1) return cm("yesterday");
+  if (diff < 7) return dt.toLocaleDateString(cmLocale(), { weekday: "long" });
+  return cmFmtDate(d);
+};
+const cmShortDay = (d) => d.toLocaleDateString(cmLocale(), { weekday: "short" }).slice(0,3);
+const cmIsSameDay = (a, b) => {
+  var x = new Date(a), y = new Date(b);
+  return x.getFullYear()===y.getFullYear() && x.getMonth()===y.getMonth() && x.getDate()===y.getDate();
+};
+
+/* Storage keys */
+const CM_KEYS = {
+  lang:         "cm_lang",
+  theme:        "cm_theme",
+  profile:      "cm_profile",
+  contacts:     "cm_contacts",
+  conversations:"cm_conversations",
+  messages:     "cm_messages",
+  stories:      "cm_stories",
+  tasks:        "cm_tasks",
+  notifications:"cm_notifs",
+  settings:     "cm_settings",
+  onboarded:    "cm_onboarded",
+};
+
+/* Discussion filters */
+const CM_CHAT_FILTERS = ["all", "unread", "groups", "favoris"];
+
+/* Notification filters */
+const CM_NOTIF_FILTERS = ["all", "call", "tasks", "events", "matchs"];
+
+/* Games categories */
+const CM_GAME_CATEGORIES = ["solo", "social"];
+
+
+/* ══════ js/i18n.js ══════ */
+/* Chrome Messenger — i18n (16 languages, fr primary) */
+
+var _cmLang = localStorage.getItem(CM_KEYS.lang) || "fr";
+
+const CM_I18N = {
+  fr: {
+    appName: "Chrome Messenger", appNameShort: "Chrome",
+    tagline: "Change de couleur comme tu changes d'humeur",
+    loading: "Chargement...",
+
+    /* Nav */
+    navHome: "Accueil", navChat: "Chat", navTasks: "Tasks", navCall: "Appels",
+    navGames: "Games", navNotifs: "Notifs",
+    voiceCall: "Appel vocal", videoCall: "Appel vidéo", callStarting: "Lancement",
+
+    /* Common */
+    search: "Rechercher", cancel: "Annuler", ok: "OK", confirm: "Confirmer",
+    save: "Enregistrer", back: "Retour", next: "Suivant", close: "Fermer",
+    done: "Termine", edit: "Modifier", delete: "Supprimer", add: "Ajouter",
+    view: "Voir", seeAll: "Voir tout", retry: "Reessayer", send: "Envoyer",
+
+    /* Home */
+    stories: "Statuts", discussions: "Discussions", addColors: "Ajouter",
+    chat: "Chat", chats: "Discussions",
+    search_placeholder: "Rechercher",
+    filter_all: "Tous", filter_unread: "Non lus", filter_groups: "Groupes", filter_favoris: "Favoris",
+    yesterday: "Hier", today: "Aujourd'hui",
+
+    /* Chat conversation */
+    typing: "ecrit...", online: "en ligne", lastSeen: "vu(e) ",
+    typeMessage: "Ecris un message...", attach: "Joindre", voice: "Voix",
+    sent: "Envoye", delivered: "Recu", read: "Lu",
+    you: "Toi",
+    newChat: "Nouvelle discussion",
+    newGroup: "Nouveau groupe",
+
+    /* Story */
+    addStory: "Ajouter status", yourStory: "Ton status",
+    viewStory: "Voir le status", viewedBy: "Vu par",
+    replyToStory: "Repondre...",
+
+    /* Todolist */
+    todolist: "Todolist", todayTasks: "Taches du jour",
+    addTask: "Ajouter une tache", taskName: "Nom de la tache",
+    taskLocation: "Lieu", taskStart: "Debut", taskEnd: "Fin",
+    taskWith: "Avec", taskType: "Type",
+    task_individual: "Individuel", task_commun: "Commun", task_daily: "Quotidien",
+    noTasks: "Aucune tache pour ce jour",
+    viewMonth: "Mois", viewWeek: "Semaine",
+
+    /* Games */
+    games: "Jeux", gamesSolo: "Pour toi", gamesSoloDesc: "Passe le temps en solo",
+    gamesSocial: "Avec tes contacts", gamesSocialDesc: "Defie tes amis",
+    play: "Jouer", invite: "Inviter",
+
+    /* Notifs */
+    notifications: "Notifications", notifToday: "Aujourd'hui", notifEarlier: "Precedemment",
+    notif_all: "Tous", notif_call: "Appels", notif_tasks: "Taches",
+    notif_events: "Evenements", notif_matchs: "Matchs",
+    noNotifs: "Aucune notification",
+
+    /* Onboarding / Auth */
+    welcome: "Bienvenue sur",
+    welcomeSub: "Une messagerie qui s'adapte a toi.",
+    getStarted: "Commencer",
+    enterPhone: "Ton numero de telephone",
+    phoneDesc: "On va t'envoyer un code par SMS pour verifier.",
+    phonePlaceholder: "+237 6XX XX XX XX",
+    sendCode: "Envoyer le code",
+    enterCode: "Entre le code recu",
+    codeDesc: "Code a 6 chiffres recu par SMS.",
+    codeNotReceived: "Pas recu ? Renvoyer",
+    verify: "Verifier",
+    profileSetup: "Ton profil",
+    profileDesc: "Ton nom et ta photo seront visibles par tes contacts.",
+    yourName: "Ton nom",
+    addPhoto: "Ajouter une photo",
+    finish: "Terminer",
+
+    /* Theme picker */
+    theme: "Theme", themes: "Themes",
+    themeDesc: "Choisis une couleur qui te ressemble.",
+    darkMode: "Mode sombre",
+
+    /* Settings */
+    settings: "Parametres", profile: "Profil", account: "Compte",
+    language: "Langue", notifications_s: "Notifications", privacy: "Confidentialite",
+    about: "A propos", version: "Version", logout: "Se deconnecter",
+    editProfile: "Modifier le profil", phone: "Telephone",
+    resetData: "Reinitialiser", resetConfirm: "Tout reinitialiser ?",
+
+    /* Misc */
+    online_s: "En ligne", offline: "Hors ligne",
+    unreadCount: "non lus",
+    comingSoon: "Bientot disponible",
+  },
+
+  en: {
+    appName: "Chrome Messenger", appNameShort: "Chrome",
+    tagline: "Changes color like you change moods",
+    loading: "Loading...",
+    navHome: "Home", navChat: "Chat", navTasks: "Todolist", navCall: "Calls",
+    navGames: "Games", navNotifs: "Notifs",
+    search: "Search", cancel: "Cancel", ok: "OK", confirm: "Confirm",
+    save: "Save", back: "Back", next: "Next", close: "Close",
+    done: "Done", edit: "Edit", delete: "Delete", add: "Add",
+    view: "View", seeAll: "See all", retry: "Retry", send: "Send",
+    stories: "Stories", discussions: "Chat", addColors: "Add",
+    chat: "Chat", chats: "Chats",
+    search_placeholder: "Search",
+    filter_all: "All", filter_unread: "Unread", filter_groups: "Groups", filter_favoris: "Favorites",
+    yesterday: "Yesterday", today: "Today",
+    typing: "typing...", online: "online", lastSeen: "last seen ",
+    typeMessage: "Type a message...", attach: "Attach", voice: "Voice",
+    sent: "Sent", delivered: "Delivered", read: "Read",
+    you: "You", newChat: "New chat", newGroup: "New group",
+    addStory: "Add story", yourStory: "Your story",
+    viewStory: "View story", viewedBy: "Viewed by", replyToStory: "Reply...",
+    todolist: "Todolist", todayTasks: "Today's tasks",
+    addTask: "Add a task", taskName: "Task name",
+    taskLocation: "Location", taskStart: "Start", taskEnd: "End",
+    taskWith: "With", taskType: "Type",
+    task_individual: "Individual", task_commun: "Shared", task_daily: "Daily",
+    noTasks: "No tasks for this day", viewMonth: "Month", viewWeek: "Week",
+    games: "Games", gamesSolo: "For you", gamesSoloDesc: "Pass the time solo",
+    gamesSocial: "With your contacts", gamesSocialDesc: "Challenge friends",
+    play: "Play", invite: "Invite",
+    notifications: "Notifications", notifToday: "Today", notifEarlier: "Earlier",
+    notif_all: "All", notif_call: "Calls", notif_tasks: "Tasks",
+    notif_events: "Events", notif_matchs: "Matches",
+    noNotifs: "No notifications",
+    welcome: "Welcome to", welcomeSub: "A messenger that adapts to you.",
+    getStarted: "Get started",
+    enterPhone: "Your phone number",
+    phoneDesc: "We'll send you an SMS code to verify.",
+    phonePlaceholder: "+1 555 123 4567", sendCode: "Send code",
+    enterCode: "Enter your code", codeDesc: "6-digit code from SMS.",
+    codeNotReceived: "Didn't get it? Resend", verify: "Verify",
+    profileSetup: "Your profile", profileDesc: "Your name and photo will be visible to contacts.",
+    yourName: "Your name", addPhoto: "Add a photo", finish: "Finish",
+    theme: "Theme", themes: "Themes",
+    themeDesc: "Pick a color that looks like you.", darkMode: "Dark mode",
+    settings: "Settings", profile: "Profile", account: "Account",
+    language: "Language", notifications_s: "Notifications", privacy: "Privacy",
+    about: "About", version: "Version", logout: "Log out",
+    editProfile: "Edit profile", phone: "Phone",
+    resetData: "Reset data", resetConfirm: "Reset everything?",
+    online_s: "Online", offline: "Offline",
+    unreadCount: "unread", comingSoon: "Coming soon",
+  },
+};
+
+/* Fallback entries for 14 other languages */
+function cmAddLang(code, patch) { CM_I18N[code] = Object.assign({}, CM_I18N.en, patch); }
+cmAddLang("es", { appName:"Chrome Messenger", navHome:"Inicio", navTasks:"Tareas", navGames:"Juegos", navNotifs:"Notif", search:"Buscar" });
+cmAddLang("pt", { appName:"Chrome Messenger", navHome:"Inicio", navTasks:"Tarefas", navGames:"Jogos", navNotifs:"Notif", search:"Buscar" });
+cmAddLang("de", { appName:"Chrome Messenger", navHome:"Start", navTasks:"Aufgaben", navGames:"Spiele", navNotifs:"Notif", search:"Suchen" });
+cmAddLang("it", { appName:"Chrome Messenger", navHome:"Home", navTasks:"Attivita", navGames:"Giochi", navNotifs:"Notif", search:"Cerca" });
+cmAddLang("nl", { appName:"Chrome Messenger", navHome:"Home", navTasks:"Taken", navGames:"Spellen", navNotifs:"Meld", search:"Zoeken" });
+cmAddLang("tr", { appName:"Chrome Messenger", navHome:"Ana", navTasks:"Gorevler", navGames:"Oyunlar", navNotifs:"Bildirim", search:"Ara" });
+cmAddLang("ru", { appName:"Chrome Messenger", navHome:"Glavnaya", navTasks:"Zadachi", navGames:"Igry", navNotifs:"Notif", search:"Poisk" });
+cmAddLang("ar", { appName:"Chrome Messenger", navHome:"Ar-ra'isiyya", navTasks:"Muhimmat", navGames:"Al'ab", navNotifs:"Tanbih", search:"Bahth" });
+cmAddLang("zh", { appName:"Chrome Messenger", navHome:"Shouye", navTasks:"Renwu", navGames:"Youxi", navNotifs:"Tongzhi", search:"Sousuo" });
+cmAddLang("ja", { appName:"Chrome Messenger", navHome:"Homu", navTasks:"Tasuku", navGames:"Gemu", navNotifs:"Tsuchi", search:"Kensaku" });
+cmAddLang("ko", { appName:"Chrome Messenger", navHome:"Hom", navTasks:"Taseukeu", navGames:"Geim", navNotifs:"Allim", search:"Geomsaek" });
+cmAddLang("hi", { appName:"Chrome Messenger", navHome:"Ghar", navTasks:"Tasks", navGames:"Games", navNotifs:"Notifs", search:"Khojo" });
+cmAddLang("sw", { appName:"Chrome Messenger", navHome:"Nyumbani", navTasks:"Kazi", navGames:"Michezo", navNotifs:"Notif", search:"Tafuta" });
+cmAddLang("pl", { appName:"Chrome Messenger", navHome:"Glowna", navTasks:"Zadania", navGames:"Gry", navNotifs:"Powiad", search:"Szukaj" });
+
+function cm(key) {
+  var dict = CM_I18N[_cmLang] || CM_I18N.fr;
+  if (dict[key] !== undefined) return dict[key];
+  if (CM_I18N.fr[key] !== undefined) return CM_I18N.fr[key];
+  return key;
+}
+
+function cmSetLang(lang) {
+  if (!CM_I18N[lang]) return;
+  _cmLang = lang;
+  localStorage.setItem(CM_KEYS.lang, lang);
+}
+
+/* CM_LANGS — chaque langue est écrite dans sa propre langue (name) + nom en FR (nameFr) pour sous-titre */
+const CM_LANGS = [
+  {code:"fr",name:"Français",     nameFr:"Français",   flag:"🇫🇷"},
+  {code:"en",name:"English",      nameFr:"Anglais",    flag:"🇬🇧"},
+  {code:"es",name:"Español",      nameFr:"Espagnol",   flag:"🇪🇸"},
+  {code:"pt",name:"Português",    nameFr:"Portugais",  flag:"🇵🇹"},
+  {code:"de",name:"Deutsch",      nameFr:"Allemand",   flag:"🇩🇪"},
+  {code:"it",name:"Italiano",     nameFr:"Italien",    flag:"🇮🇹"},
+  {code:"nl",name:"Nederlands",   nameFr:"Néerlandais",flag:"🇳🇱"},
+  {code:"tr",name:"Türkçe",       nameFr:"Turc",       flag:"🇹🇷"},
+  {code:"ru",name:"Русский",      nameFr:"Russe",      flag:"🇷🇺"},
+  {code:"ar",name:"العربية",      nameFr:"Arabe",      flag:"🇸🇦"},
+  {code:"zh",name:"中文",          nameFr:"Chinois",    flag:"🇨🇳"},
+  {code:"ja",name:"日本語",         nameFr:"Japonais",   flag:"🇯🇵"},
+  {code:"ko",name:"한국어",         nameFr:"Coréen",     flag:"🇰🇷"},
+  {code:"hi",name:"हिन्दी",        nameFr:"Hindi",      flag:"🇮🇳"},
+  {code:"sw",name:"Kiswahili",    nameFr:"Swahili",    flag:"🇰🇪"},
+  {code:"pl",name:"Polski",       nameFr:"Polonais",   flag:"🇵🇱"},
+];
+
+
+/* ══════ js/data/seed.js ══════ */
+/* Chrome Messenger — Mock data (contacts, messages, stories, tasks, notifs, games) */
+
+/* Avatar generator: colored initials for mock contacts. Real app would use photos. */
+function cmAvatar(name, palette) {
+  var colors = palette || ["#FF4F7A","#4F80FF","#FF8A4C","#A855F7","#30D79C","#C895E8","#FFC940","#F06EB5"];
+  var idx = 0;
+  for (var i = 0; i < name.length; i++) idx = (idx + name.charCodeAt(i)) | 0;
+  idx = Math.abs(idx) % colors.length;
+  var initials = name.split(" ").map(function(w){ return w[0] || ""; }).slice(0,2).join("").toUpperCase();
+  return { initials: initials, color: colors[idx] };
+}
+
+/* Initial contacts (used on first app launch). */
+const CM_SEED_CONTACTS = [
+  { id: "c1",  name: "Joseph Lando",       phone: "+237 6 99 01 02 03", favorite: true,  category: "famille",       lastSeen: Date.now() - 1000*60*5 },
+  { id: "c2",  name: "Richy",              phone: "+237 6 99 11 22 33", favorite: false, category: "amis",          lastSeen: Date.now() - 1000*60*60 },
+  { id: "c3",  name: "Morgan Freeman",     phone: "+237 6 99 44 55 66", favorite: true,  category: "connaissances", lastSeen: Date.now() - 1000*60*15 },
+  { id: "c4",  name: "Tarzan",             phone: "+237 6 99 77 88 99", favorite: false, category: "amis",          lastSeen: Date.now() - 1000*60*90 },
+  { id: "c5",  name: "Cody",               phone: "+237 6 99 10 20 30", favorite: false, category: "collegues",     lastSeen: Date.now() - 1000*60*180 },
+  { id: "c6",  name: "Style Man",          phone: "+237 6 99 40 50 60", favorite: false, category: "utilitaires",   lastSeen: Date.now() - 1000*60*60*5 },
+  { id: "c7",  name: "Motoconda",          phone: "+237 6 99 70 80 90", favorite: false, category: "utilitaires",   lastSeen: Date.now() - 1000*60*60*10 },
+  { id: "c8",  name: "Itachi",             phone: "+237 6 99 00 11 22", favorite: false, category: "amis",          lastSeen: Date.now() - 1000*60*60*24 },
+  { id: "c9",  name: "Elodie Lando",       phone: "+237 6 99 33 44 55", favorite: true,  category: "famille",       lastSeen: Date.now() - 1000*60*2 },
+  { id: "c10", name: "Madeleine Ngniteze", phone: "+237 6 99 66 77 88", favorite: false, category: "famille",       lastSeen: Date.now() - 1000*60*30 },
+];
+
+/* Initial conversations (1-to-1). Each has a list of messages referenced separately. */
+const CM_SEED_CONVERSATIONS = [
+  { id: "conv1", type: "direct", contactId: "c1",  pinned: true,  muted: false, lastMsgAt: Date.now() - 1000*60*60*20 },
+  { id: "conv2", type: "direct", contactId: "c2",  pinned: false, muted: false, lastMsgAt: Date.now() - 1000*60*60*21 },
+  { id: "conv3", type: "direct", contactId: "c3",  pinned: false, muted: false, lastMsgAt: Date.now() - 1000*60*60*22 },
+  { id: "conv4", type: "direct", contactId: "c4",  pinned: false, muted: false, lastMsgAt: Date.now() - 1000*60*60*23 },
+  { id: "conv5", type: "direct", contactId: "c5",  pinned: false, muted: false, lastMsgAt: Date.now() - 1000*60*60*24 },
+  { id: "conv6", type: "direct", contactId: "c6",  pinned: false, muted: true,  lastMsgAt: Date.now() - 1000*60*60*48 },
+  { id: "convg","type": "group", name: "Lando Family", memberIds: ["c1","c9","c10"], pinned: false, muted: false, lastMsgAt: Date.now() - 1000*60*60*30 },
+];
+
+/* Initial messages per conversation. Me = profile.id (resolved at runtime). */
+const CM_SEED_MESSAGES = {
+  conv1: [
+    { id: "m1", authorId: "c1",   text: "Salut !",                   at: Date.now() - 1000*60*60*24, readByMe: true },
+    { id: "m2", authorId: "me",   text: "Bonjour toi !",             at: Date.now() - 1000*60*60*20, readByMe: true },
+    { id: "m3", authorId: "c1",   text: "On se voit demain ?",       at: Date.now() - 1000*60*60*20, readByMe: true },
+  ],
+  conv2: [
+    { id: "m1", authorId: "c2",   text: "Bonjour toi !",             at: Date.now() - 1000*60*60*21, readByMe: true },
+  ],
+  conv3: [
+    { id: "m1", authorId: "c3",   text: "Bonjour toi !",             at: Date.now() - 1000*60*60*22, readByMe: true },
+  ],
+  conv4: [
+    { id: "m1", authorId: "c4",   text: "Bonjour toi !",             at: Date.now() - 1000*60*60*23, readByMe: false },
+    { id: "m2", authorId: "c4",   text: "Tu es la ?",                at: Date.now() - 1000*60*60*23, readByMe: false },
+  ],
+  conv5: [
+    { id: "m1", authorId: "c5",   text: "Bonjour toi !",             at: Date.now() - 1000*60*60*24, readByMe: true },
+  ],
+  conv6: [
+    { id: "m1", authorId: "c6",   text: "Bonjour toi !",             at: Date.now() - 1000*60*60*48, readByMe: true },
+  ],
+  convg: [
+    { id: "m1", authorId: "c9",   text: "Bienvenue dans le groupe !",at: Date.now() - 1000*60*60*30, readByMe: true },
+    { id: "m2", authorId: "c10",  text: "Salut tout le monde 👋",    at: Date.now() - 1000*60*60*29, readByMe: true },
+  ],
+};
+
+/* Stories — visible on home, expire after 24h */
+const CM_SEED_STORIES = [
+  { id: "s1", ownerId: "c1",  createdAt: Date.now() - 1000*60*60*6,  viewed: false, bg: "#FFE8A0", kind: "colors", text: "Une belle journee !" },
+  { id: "s2", ownerId: "c9",  createdAt: Date.now() - 1000*60*60*2,  viewed: false, bg: "#C8D9FF", kind: "colors", text: "Chillin" },
+  { id: "s3", ownerId: "c10", createdAt: Date.now() - 1000*60*60*12, viewed: true,  bg: "#FFC6D3", kind: "colors", text: "Bon week-end" },
+];
+
+/* Tasks — for todolist */
+function cmSeedTasks() {
+  var today = new Date(); today.setHours(0,0,0,0);
+  var base = today.getTime();
+  return [
+    { id: "t1", title: "Homework",      with: "Fred Larson",  place: "Bafoussam", startAt: base + 19*3600*1000 + 15*60*1000, endAt: base + 19*3600*1000 + 25*60*1000, type: "individual", done: false },
+    { id: "t2", title: "RDV",           with: "Chris Duck",   place: "Yaounde",   startAt: base + 19*3600*1000 + 35*60*1000, endAt: base + 19*3600*1000 + 55*60*1000, type: "commun",     done: false },
+    { id: "t3", title: "RDV d'affaire", with: "Yves Molaro",  place: "Douala",    startAt: base + 21*3600*1000 + 15*60*1000, endAt: base + 21*3600*1000 + 55*60*1000, type: "individual", done: false },
+    /* Extra tasks on other days to show calendar dots */
+    { id: "t4", title: "Sport",         with: "",             place: "",          startAt: base + 86400000 + 7*3600*1000,    endAt: base + 86400000 + 8*3600*1000,    type: "daily",      done: false },
+    { id: "t5", title: "Meeting team",  with: "Team",         place: "Bureau",    startAt: base + 2*86400000 + 10*3600*1000, endAt: base + 2*86400000 + 11*3600*1000, type: "commun",     done: false },
+  ];
+}
+
+/* Notifications */
+function cmSeedNotifs() {
+  return [
+    { id: "n1", kind: "tasks",  title: "Homework", subtitle: "with Fred Larson",    place: "Bafoussam", time: "19:15 - 19:25", at: Date.now() - 1000*60*60*2, read: false },
+    { id: "n2", kind: "tasks",  title: "RDV",      subtitle: "with Chris Duck",     place: "Yaounde",   time: "19:35 - 19:55", at: Date.now() - 1000*60*60*3, read: false },
+    { id: "n3", kind: "call",   title: "Joseph Lando", subtitle: "Appel manque",     place: "",          time: "18:40",         at: Date.now() - 1000*60*60*5, read: false },
+    { id: "n4", kind: "events", title: "Anniversaire Morgan", subtitle: "Aujourd'hui", place: "",        time: "",              at: Date.now() - 1000*60*60*8, read: true  },
+  ];
+}
+
+/* Games — solo (time-killers) + social (with contacts).
+ * On first launch these are injected; user can't modify list.
+ */
+const CM_SEED_GAMES = {
+  solo: [
+    { id: "g-snake",    name: "Snake",           emoji: "🐍", color: "#30D79C", kind: "external", href: "https://land-lang-120.github.io/snake-labyrinth/", desc: "Labyrinthes neon infinis." },
+    { id: "g-tetroid",  name: "Tetroid",         emoji: "🧱", color: "#A855F7", kind: "external", href: "https://tetroid-game.netlify.app/", desc: "Tetris nouvelle gen." },
+    { id: "g-block",    name: "Block Blast",     emoji: "💥", color: "#4F80FF", kind: "external", href: "https://block-blast-royal.netlify.app/", desc: "Puzzle de blocs explosif." },
+    { id: "g-bounce",   name: "Bounce",          emoji: "🏀", color: "#FF8A4C", kind: "external", href: "https://bounce-labyrinth.netlify.app/", desc: "Platformer infini." },
+    { id: "g-2048",     name: "2048",            emoji: "🔢", color: "#FFC940", kind: "builtin",  desc: "Combine les tuiles." },
+    { id: "g-memory",   name: "Memory",          emoji: "🧠", color: "#F06EB5", kind: "builtin",  desc: "Trouve les paires." },
+  ],
+  social: [
+    { id: "g-ttt",      name: "Morpion",         emoji: "⭕", color: "#30D79C", kind: "social", desc: "Defie un contact au morpion." },
+    { id: "g-rps",      name: "Pierre Papier",   emoji: "✂️", color: "#FF4F7A", kind: "social", desc: "Pierre-feuille-ciseaux." },
+    { id: "g-draw",     name: "Devine",          emoji: "🎨", color: "#C895E8", kind: "social", desc: "Dessine, fais deviner." },
+    { id: "g-truth",    name: "Action-Verite",   emoji: "🎯", color: "#4F80FF", kind: "social", desc: "Classique entre amis." },
+    { id: "g-quiz",     name: "Quiz",            emoji: "🧩", color: "#FF8A4C", kind: "social", desc: "Qui connait mieux qui ?" },
+  ],
+};
+
+/* Contact seeding helper */
+function cmContactById(contacts, id) {
+  for (var i = 0; i < contacts.length; i++) if (contacts[i].id === id) return contacts[i];
+  return null;
+}
+
+
+/* ══════ js/storage.js ══════ */
+/* Chrome Messenger — Storage layer */
+
+function cmLoad(key, defaultVal) {
+  try {
+    var raw = localStorage.getItem(key);
+    if (raw === null) return defaultVal;
+    return JSON.parse(raw);
+  } catch (e) { return defaultVal; }
+}
+function cmSave(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+}
+
+/* Profile */
+function cmGetProfile() {
+  return cmLoad(CM_KEYS.profile, {
+    id: "me",
+    name: "",
+    phone: "",
+    avatar: null,
+    bio: "",
+    createdAt: null,
+  });
+}
+function cmSetProfile(p) { cmSave(CM_KEYS.profile, p); }
+
+/* Onboarding */
+function cmIsOnboarded() { return !!cmLoad(CM_KEYS.onboarded, false); }
+function cmSetOnboarded(v) { cmSave(CM_KEYS.onboarded, !!v); }
+
+/* Settings */
+function cmGetSettings() {
+  return cmLoad(CM_KEYS.settings, {
+    notifications: true,
+    sound: true,
+    enterToSend: true,
+    readReceipts: true,
+  });
+}
+function cmSetSettings(s) { cmSave(CM_KEYS.settings, s); }
+
+/* Contacts */
+function cmGetContacts() { return cmLoad(CM_KEYS.contacts, []); }
+function cmSetContacts(list) { cmSave(CM_KEYS.contacts, list); }
+
+/* Conversations */
+function cmGetConversations() { return cmLoad(CM_KEYS.conversations, []); }
+function cmSetConversations(list) { cmSave(CM_KEYS.conversations, list); }
+function cmFindConversation(id) {
+  var list = cmGetConversations();
+  for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+  return null;
+}
+function cmUpdateConversation(id, patch) {
+  var list = cmGetConversations();
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].id === id) { list[i] = Object.assign({}, list[i], patch); break; }
+  }
+  cmSetConversations(list);
+}
+
+/* Messages (per conversation, keyed) */
+function cmGetMessages(convId) {
+  var all = cmLoad(CM_KEYS.messages, {});
+  return all[convId] || [];
+}
+function cmSetMessages(convId, msgs) {
+  var all = cmLoad(CM_KEYS.messages, {});
+  all[convId] = msgs;
+  cmSave(CM_KEYS.messages, all);
+}
+function cmAddMessage(convId, msg) {
+  var list = cmGetMessages(convId);
+  msg.id = msg.id || ("m_" + Date.now() + "_" + Math.random().toString(36).substring(2,7));
+  list.push(msg);
+  /* Strip in-memory plaintext cache (_text) before persisting: cipher stays encrypted on disk */
+  var persistList = list.map(function(m){
+    if (m.cipher && m._text !== undefined) {
+      var clone = {}; for (var k in m) { if (k !== "_text") clone[k] = m[k]; }
+      return clone;
+    }
+    return m;
+  });
+  cmSetMessages(convId, persistList);
+  cmUpdateConversation(convId, { lastMsgAt: msg.at || Date.now() });
+  return msg.id;
+}
+
+/* Last message preview for conversation row */
+function cmLastMessage(convId) {
+  var list = cmGetMessages(convId);
+  return list[list.length - 1] || null;
+}
+
+/* Stories */
+function cmGetStories() {
+  /* Filter out stories older than 24h */
+  var list = cmLoad(CM_KEYS.stories, []);
+  var cutoff = Date.now() - 24*3600*1000;
+  return list.filter(function(s){ return s.createdAt > cutoff; });
+}
+function cmAddStory(story) {
+  var list = cmLoad(CM_KEYS.stories, []);
+  story.id = story.id || ("s_" + Date.now());
+  story.createdAt = story.createdAt || Date.now();
+  list.push(story);
+  cmSave(CM_KEYS.stories, list);
+  return story.id;
+}
+function cmMarkStoryViewed(id) {
+  var list = cmLoad(CM_KEYS.stories, []);
+  list = list.map(function(s){ return s.id === id ? Object.assign({}, s, { viewed: true }) : s; });
+  cmSave(CM_KEYS.stories, list);
+}
+
+/* Tasks */
+function cmGetTasks() { return cmLoad(CM_KEYS.tasks, []); }
+function cmSetTasks(list) { cmSave(CM_KEYS.tasks, list); }
+function cmAddTask(task) {
+  var list = cmGetTasks();
+  task.id = task.id || ("t_" + Date.now());
+  list.push(task);
+  cmSetTasks(list);
+  return task.id;
+}
+function cmUpdateTask(id, patch) {
+  var list = cmGetTasks();
+  list = list.map(function(t){ return t.id === id ? Object.assign({}, t, patch) : t; });
+  cmSetTasks(list);
+}
+function cmDeleteTask(id) {
+  cmSetTasks(cmGetTasks().filter(function(t){ return t.id !== id; }));
+}
+function cmTasksForDate(dateMs) {
+  var day = new Date(dateMs); day.setHours(0,0,0,0);
+  var start = day.getTime();
+  var end = start + 86400000;
+  return cmGetTasks().filter(function(t){ return t.startAt >= start && t.startAt < end; });
+}
+function cmDaysWithTasks() {
+  /* Returns set of day-ms (midnight) that have at least one task */
+  var list = cmGetTasks();
+  var set = {};
+  list.forEach(function(t){
+    var d = new Date(t.startAt); d.setHours(0,0,0,0);
+    set[d.getTime()] = true;
+  });
+  return set;
+}
+
+/* Notifications */
+function cmGetNotifs() { return cmLoad(CM_KEYS.notifications, []); }
+function cmSetNotifs(list) { cmSave(CM_KEYS.notifications, list); }
+function cmUnreadNotifsCount() {
+  return cmGetNotifs().filter(function(n){ return !n.read; }).length;
+}
+function cmMarkAllNotifsRead() {
+  cmSetNotifs(cmGetNotifs().map(function(n){ return Object.assign({}, n, { read: true }); }));
+}
+
+/* Unread messages across all conversations */
+function cmUnreadMessagesCount() {
+  var total = 0;
+  cmGetConversations().forEach(function(c) {
+    var msgs = cmGetMessages(c.id);
+    msgs.forEach(function(m){
+      if (m.authorId !== "me" && m.readByMe === false) total++;
+    });
+  });
+  return total;
+}
+
+/* Reset all */
+function cmResetAll() {
+  Object.keys(CM_KEYS).forEach(function(k) { localStorage.removeItem(CM_KEYS[k]); });
+}
+
+/* First-launch seeding. Also refreshes stories if they expired (24h cutoff). */
+function cmSeedIfNeeded() {
+  if (cmGetContacts().length === 0) cmSetContacts(CM_SEED_CONTACTS);
+  if (cmGetConversations().length === 0) cmSetConversations(CM_SEED_CONVERSATIONS);
+  var all = cmLoad(CM_KEYS.messages, {});
+  if (Object.keys(all).length === 0) cmSave(CM_KEYS.messages, CM_SEED_MESSAGES);
+  /* Re-seed stories if all expired (24h cutoff) */
+  var storedStories = cmLoad(CM_KEYS.stories, null);
+  if (storedStories === null || cmGetStories().length === 0) {
+    /* Rebuild fresh (created within last 24h) */
+    var fresh = CM_SEED_STORIES.map(function(s, i){
+      return Object.assign({}, s, { createdAt: Date.now() - 1000*60*60*(i+2) });
+    });
+    cmSave(CM_KEYS.stories, fresh);
+  }
+  if (cmGetTasks().length === 0) cmSetTasks(cmSeedTasks());
+  if (cmGetNotifs().length === 0) cmSetNotifs(cmSeedNotifs());
+}
+
+
+/* ══════ js/crypto.js ══════ */
+/* Chrome Messenger — End-to-End Encryption Layer
+ *
+ * Architecture inspired by Signal/WhatsApp:
+ *  - Each user has an ECDH keypair (P-256 curve) persisted locally.
+ *  - When two users open a conversation, they derive a shared secret via ECDH,
+ *    then use it as a root key (HKDF) to produce a chain of AES-256-GCM message keys.
+ *  - Every message is encrypted with a fresh key; old keys are deleted.
+ *  - The server (real-world) only sees ciphertext + ephemeral public keys.
+ *
+ * For this client-only demo (localStorage simulation), we:
+ *  - Generate a real ECDH keypair per user.
+ *  - Derive a real shared AES-GCM key per conversation.
+ *  - Encrypt every message with AES-GCM and a random IV before storing.
+ *  - Decrypt on read.
+ *
+ * Performance:
+ *  - AES-GCM + ECDH are native WebCrypto (hardware-accelerated).
+ *  - Message keys cached in-memory per conversation (avoids re-derivation).
+ *  - Messages persisted as compact base64 ciphertext, never plaintext.
+ *
+ * Resource efficiency (Telegram/WhatsApp-like):
+ *  - Messages lazy-loaded per conversation (not all at once).
+ *  - Key cache with LRU eviction (max 20 conversations in memory).
+ *  - Only the last 200 messages per conv are kept hot; older trimmed to archive.
+ */
+
+var _cmKeyCache = {}; /* convId -> CryptoKey (AES-GCM) */
+var _cmMyKeypair = null; /* CryptoKeyPair for my account */
+var _cmPeerPublicKeys = {}; /* contactId -> CryptoKey (public) */
+
+const CM_CRYPTO_KEYS = {
+  myPrivateKey: "cm_crypto_my_priv",
+  myPublicKey:  "cm_crypto_my_pub",
+  peerKeys:     "cm_crypto_peer_keys",
+};
+
+/* ===== Initialization ===== */
+
+async function cmCryptoInit() {
+  if (!window.crypto || !window.crypto.subtle) {
+    console.warn("[cm-crypto] WebCrypto not available, falling back to plaintext mode");
+    return false;
+  }
+  /* Load or generate my keypair */
+  var stored = await cmLoadMyKeypair();
+  if (stored) {
+    _cmMyKeypair = stored;
+  } else {
+    _cmMyKeypair = await cmGenerateKeypair();
+    await cmPersistMyKeypair(_cmMyKeypair);
+  }
+  /* Load peer public keys from local cache */
+  try {
+    var raw = localStorage.getItem(CM_CRYPTO_KEYS.peerKeys);
+    if (raw) {
+      var obj = JSON.parse(raw);
+      for (var k in obj) {
+        _cmPeerPublicKeys[k] = await cmImportPublicKey(obj[k]);
+      }
+    }
+  } catch (e) {}
+  return true;
+}
+
+async function cmGenerateKeypair() {
+  return crypto.subtle.generateKey(
+    { name: "ECDH", namedCurve: "P-256" },
+    true, /* extractable — only locally, never exported off-device in real app */
+    ["deriveKey"]
+  );
+}
+
+async function cmExportPublicKey(key) {
+  var buf = await crypto.subtle.exportKey("raw", key);
+  return cmBufToBase64(buf);
+}
+
+async function cmImportPublicKey(base64) {
+  var buf = cmBase64ToBuf(base64);
+  return crypto.subtle.importKey(
+    "raw", buf,
+    { name: "ECDH", namedCurve: "P-256" },
+    true, [] /* public keys don't need deriveKey capability themselves */
+  );
+}
+
+async function cmPersistMyKeypair(kp) {
+  try {
+    var privJwk = await crypto.subtle.exportKey("jwk", kp.privateKey);
+    var pubRaw = await cmExportPublicKey(kp.publicKey);
+    localStorage.setItem(CM_CRYPTO_KEYS.myPrivateKey, JSON.stringify(privJwk));
+    localStorage.setItem(CM_CRYPTO_KEYS.myPublicKey, pubRaw);
+  } catch (e) { console.warn("[cm-crypto] persist failed", e); }
+}
+
+async function cmLoadMyKeypair() {
+  try {
+    var privStr = localStorage.getItem(CM_CRYPTO_KEYS.myPrivateKey);
+    var pubStr  = localStorage.getItem(CM_CRYPTO_KEYS.myPublicKey);
+    if (!privStr || !pubStr) return null;
+    var privJwk = JSON.parse(privStr);
+    var privateKey = await crypto.subtle.importKey(
+      "jwk", privJwk,
+      { name: "ECDH", namedCurve: "P-256" },
+      true, ["deriveKey"]
+    );
+    var publicKey = await cmImportPublicKey(pubStr);
+    return { privateKey: privateKey, publicKey: publicKey };
+  } catch (e) { return null; }
+}
+
+/* ===== Peer Key Exchange (simulated) =====
+ * In the demo, we create a fake peer keypair for each contact and persist
+ * only their public key locally. In a real app, the server relays these.
+ */
+async function cmEnsurePeerKey(contactId) {
+  if (_cmPeerPublicKeys[contactId]) return _cmPeerPublicKeys[contactId];
+  /* Generate a mock peer keypair — only their public key stored */
+  var peerKp = await cmGenerateKeypair();
+  var pubRaw = await cmExportPublicKey(peerKp.publicKey);
+  /* Store */
+  try {
+    var raw = localStorage.getItem(CM_CRYPTO_KEYS.peerKeys);
+    var obj = raw ? JSON.parse(raw) : {};
+    obj[contactId] = pubRaw;
+    localStorage.setItem(CM_CRYPTO_KEYS.peerKeys, JSON.stringify(obj));
+  } catch (e) {}
+  _cmPeerPublicKeys[contactId] = peerKp.publicKey;
+  return peerKp.publicKey;
+}
+
+/* ===== Per-conversation symmetric key derivation ===== */
+async function cmGetConvKey(convId) {
+  if (_cmKeyCache[convId]) return _cmKeyCache[convId];
+  /* LRU-like eviction if cache too big */
+  var keys = Object.keys(_cmKeyCache);
+  if (keys.length > 20) delete _cmKeyCache[keys[0]];
+
+  if (!_cmMyKeypair) return null;
+  var conv = cmFindConversation(convId);
+  if (!conv) return null;
+
+  /* Derive shared key: for direct chats use contact's public key;
+     for groups we'd use a sender-keys scheme — here we fallback to group key. */
+  var peerKey;
+  if (conv.type === "direct") {
+    peerKey = await cmEnsurePeerKey(conv.contactId);
+  } else {
+    /* Mock: derive group key from conv.id as salt (demo only) */
+    peerKey = await cmEnsurePeerKey(conv.id);
+  }
+
+  var aesKey = await crypto.subtle.deriveKey(
+    { name: "ECDH", public: peerKey },
+    _cmMyKeypair.privateKey,
+    { name: "AES-GCM", length: 256 },
+    false, /* not extractable — stays in browser crypto engine */
+    ["encrypt", "decrypt"]
+  );
+
+  _cmKeyCache[convId] = aesKey;
+  return aesKey;
+}
+
+/* ===== Encrypt / Decrypt ===== */
+async function cmEncryptMessage(convId, plaintext) {
+  var key = await cmGetConvKey(convId);
+  if (!key) return { ciphertext: plaintext, iv: null, enc: false };
+  var iv = crypto.getRandomValues(new Uint8Array(12));
+  var encoded = new TextEncoder().encode(plaintext);
+  var ctBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, encoded);
+  return {
+    ciphertext: cmBufToBase64(ctBuf),
+    iv: cmBufToBase64(iv),
+    enc: true,
+  };
+}
+
+async function cmDecryptMessage(convId, payload) {
+  if (!payload.enc) return payload.ciphertext; /* plaintext fallback */
+  var key = await cmGetConvKey(convId);
+  if (!key) return "[encrypted]";
+  try {
+    var iv = cmBase64ToBuf(payload.iv);
+    var ct = cmBase64ToBuf(payload.ciphertext);
+    var plainBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, ct);
+    return new TextDecoder().decode(plainBuf);
+  } catch (e) {
+    return "[decrypt failed]";
+  }
+}
+
+/* ===== Helpers ===== */
+function cmBufToBase64(buf) {
+  var bytes = new Uint8Array(buf);
+  var bin = "";
+  for (var i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+function cmBase64ToBuf(base64) {
+  var bin = atob(base64);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
+/* ===== High-level wrappers used by chat UI ===== */
+
+/* Encrypt before storing, return compact payload */
+async function cmAddEncryptedMessage(convId, plaintext, authorId) {
+  var payload = await cmEncryptMessage(convId, plaintext);
+  var msg = {
+    authorId: authorId || "me",
+    at: Date.now(),
+    readByMe: true,
+    cipher: payload, /* { ciphertext, iv, enc } */
+  };
+  return cmAddMessage(convId, msg);
+}
+
+/* Decrypt all cached messages of a conversation for display.
+ * Caches decrypted text on the message object in-memory to avoid double work. */
+async function cmDecryptConversation(convId) {
+  var msgs = cmGetMessages(convId);
+  for (var i = 0; i < msgs.length; i++) {
+    var m = msgs[i];
+    if (m.cipher && !m._text) {
+      m._text = await cmDecryptMessage(convId, m.cipher);
+    } else if (!m._text) {
+      m._text = m.text || "";
+    }
+  }
+  return msgs;
+}
+
+/* Quick message text getter (sync) — uses cache, else falls back to plain */
+function cmMsgText(m) {
+  if (m._text !== undefined) return m._text;
+  if (m.cipher) return "🔒";
+  return m.text || "";
+}
+
+/* ===== Resource-efficient pruning =====
+ * Keep the last 200 messages per conversation hot; archive older to
+ * a secondary key to reduce JSON.parse overhead on startup.
+ */
+function cmPruneOldMessages(convId, keepHot) {
+  keepHot = keepHot || 200;
+  var all = cmGetMessages(convId);
+  if (all.length <= keepHot) return;
+  var cut = all.length - keepHot;
+  var archive = all.slice(0, cut);
+  var hot = all.slice(cut);
+  try {
+    var archKey = "cm_archive_" + convId;
+    var existing = localStorage.getItem(archKey);
+    var arr = existing ? JSON.parse(existing) : [];
+    localStorage.setItem(archKey, JSON.stringify(arr.concat(archive)));
+  } catch (e) {}
+  cmSetMessages(convId, hot);
+}
+
+
+/* ══════ js/components.js ══════ */
+/* Chrome Messenger — Shared React components */
+
+/* === CHAMELEON LOGO === (vrai SVG fourni par l'utilisateur, source CAMEO)
+ * 3 couches :
+ *   bg   (#fefefe)  = fond blanc avec chameleon decoupe
+ *   body (CM.primary) = chameleon vert — change de couleur avec le theme
+ *   eye  = petit cercle (meme couleur que body)
+ *   hi   (#f8fcfa)  = reflet blanc dans le petit oeil
+ * Props : size (px), color (override body), showBg (bool, default true).
+ */
+const CM_LOGO_BG_PATH = "M306.5,510.92q-72.46,0-144.92.08c-3,0-3.58-.6-3.58-3.58q.15-111.92,0-223.84c0-3,.6-3.58,3.58-3.58q144.92.15,289.84,0c3,0,3.58.6,3.58,3.58q-.15,111.92,0,223.84c0,3-.6,3.59-3.58,3.58Q379,510.82,306.5,510.92ZM315.56,398c1.22,2.26,1.95,3.53,2.61,4.84a22,22,0,0,1-3.42,24.62,22.23,22.23,0,0,1-24.26,5.62A21.93,21.93,0,0,1,277,408.49a21.7,21.7,0,0,1,21.32-17.56c18.31-.13,36.62-.07,54.93-.06,11.83,0,11.83,0,9.69-11.54-5.24-28.25-30.64-50.43-59.42-52-3.09-.17-4.64.38-4.4,3.94.29,4.31-.35,8.71.18,13,.67,5.42-1.21,7.58-6.63,7.29a23.23,23.23,0,0,0-6.37,1.07c-27.36,6.55-45,33.43-39.73,60.55,5.45,28.11,31.3,46.7,59.42,42.72,25.22-3.57,42.67-28.81,36.95-53.48-.46-2-.4-4.42-3.62-4.37C331.71,398.1,324.08,398,315.56,398Zm-30.68,15.12a13.45,13.45,0,0,0,13.66,13.55,13.8,13.8,0,1,0-13.66-13.55Z";
+const CM_LOGO_BODY_PATH = "M315.56,398c8.52,0,16.15.07,23.77,0,3.22-.05,3.16,2.36,3.62,4.37,5.72,24.67-11.73,49.91-36.95,53.48-28.12,4-54-14.61-59.42-42.72-5.26-27.12,12.37-54,39.73-60.55a23.23,23.23,0,0,1,6.37-1.07c5.42.29,7.3-1.87,6.63-7.29-.53-4.26.11-8.66-.18-13-.24-3.56,1.31-4.11,4.4-3.94,28.78,1.59,54.18,23.77,59.42,52,2.14,11.57,2.14,11.55-9.69,11.54-18.31,0-36.62-.07-54.93.06A21.7,21.7,0,0,0,277,408.49a21.93,21.93,0,0,0,13.48,24.62,22.23,22.23,0,0,0,24.26-5.62,22,22,0,0,0,3.42-24.62C317.51,401.56,316.78,400.29,315.56,398Zm11-44.92a13.39,13.39,0,0,0-.22,26.77A13.38,13.38,0,0,0,340,366.41,13.8,13.8,0,0,0,326.54,353.11Z";
+const CM_LOGO_EYE_PATH = "M284.88,413.15a13.75,13.75,0,1,1,13.66,13.55A13.45,13.45,0,0,1,284.88,413.15Z";
+const CM_LOGO_EYE_HILITE_PATH = "M326.54,353.11A13.8,13.8,0,0,1,340,366.41a13.38,13.38,0,0,1-13.64,13.47,13.39,13.39,0,0,1,.22-26.77Z";
+const CM_LOGO_TRANSFORM = "translate(-158 -280)";
+
+function ChameleonLogo(props) {
+  var size = props.size || 36;
+  var color = props.color || CM.primary;
+  var showBg = props.showBg !== false; /* default true */
+  /* In dark mode, the bg fill mirrors the surface so the "white rectangle" disappears */
+  var isDark = CM.darkMode === true;
+  var bgFill = props.bgFill || (isDark ? CM.bg : "#fefefe");
+  var eyeFill = props.eyeFill || (isDark ? CM.bg : "#f8fcfa");
+
+  var children = [];
+  if (showBg) {
+    children.push(React.createElement("path", { key:"bg", d: CM_LOGO_BG_PATH, fill: bgFill, transform: CM_LOGO_TRANSFORM }));
+  }
+  children.push(React.createElement("path", { key:"body", d: CM_LOGO_BODY_PATH, fill: color, transform: CM_LOGO_TRANSFORM }));
+  children.push(React.createElement("path", { key:"eye",  d: CM_LOGO_EYE_PATH,  fill: color, transform: CM_LOGO_TRANSFORM }));
+  children.push(React.createElement("path", { key:"hi",   d: CM_LOGO_EYE_HILITE_PATH, fill: eyeFill, transform: CM_LOGO_TRANSFORM }));
+
+  return React.createElement("svg", {
+    width: size, height: size,
+    viewBox: "0 0 297 231",
+    xmlns: "http://www.w3.org/2000/svg",
+    style: Object.assign({ display: "block" }, props.style || {}),
+    "aria-label": "Chrome Messenger",
+  }, children);
+}
+
+/* === ICONS === (Fluent System 24 — close to near-black #1F1F1F, fidèle aux designs CAMEO/FINAL)
+ * Regular = outlined (inactif), Filled = solide (actif)
+ * Color par défaut = currentColor → permet de piloter via le parent (CM.body / CM.primary etc.)
+ */
+const Cmi = {
+  /* --- Fluent System Icons (MIT, paths officiels Microsoft, viewBox 24) --- */
+  home: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M12.363 2.318a1 1 0 0 0-1.27-.024l-8.5 6.75A1 1 0 0 0 2.25 10v9.25A2.75 2.75 0 0 0 5 22h2.25a.75.75 0 0 0 .75-.75v-6a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 .75.75v6c0 .414.336.75.75.75H19A2.75 2.75 0 0 0 21.75 19.25V10a1 1 0 0 0-.37-.777l-9-7.15zM3.75 10.37l8.272-6.567 8.228 6.536v8.911c0 .69-.56 1.25-1.25 1.25H17v-5.25A2.25 2.25 0 0 0 14.75 13h-6.5a2.25 2.25 0 0 0-2.25 2.25v5.25H5c-.69 0-1.25-.56-1.25-1.25v-8.88z"})),
+  homeFilled: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M11.094 2.294a1.5 1.5 0 0 1 1.81 0l8.5 6.5A1.5 1.5 0 0 1 22 10V19.25A2.75 2.75 0 0 1 19.25 22h-2.5A1.75 1.75 0 0 1 15 20.25V15.5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.75A1.75 1.75 0 0 1 7.25 22h-2.5A2.75 2.75 0 0 1 2 19.25v-9.455a1.5 1.5 0 0 1 .594-1.196l8.5-6.305z"})),
+  chat: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M6.75 3A3.75 3.75 0 0 0 3 6.75v8.5A3.75 3.75 0 0 0 6.75 19H7.5v3.25c0 .578.635.93 1.124.625L14 19h3.25A3.75 3.75 0 0 0 21 15.25v-8.5A3.75 3.75 0 0 0 17.25 3H6.75zm-2.25 3.75A2.25 2.25 0 0 1 6.75 4.5h10.5a2.25 2.25 0 0 1 2.25 2.25v8.5a2.25 2.25 0 0 1-2.25 2.25H13.79c-.14 0-.276.04-.396.115L9 20.29V17.75a.75.75 0 0 0-.75-.75H6.75a2.25 2.25 0 0 1-2.25-2.25v-8z"})),
+  chatFilled: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M2 6.75A3.75 3.75 0 0 1 5.75 3h12.5A3.75 3.75 0 0 1 22 6.75v8.5A3.75 3.75 0 0 1 18.25 19H13.23l-3.987 2.95c-.83.614-2.005.007-1.995-1.026l.022-1.924H5.75A3.75 3.75 0 0 1 2 15.25v-8.5z"})),
+  tasks: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M8 2.75A.75.75 0 0 1 8.75 2h6.5a.75.75 0 0 1 0 1.5H14v.75h3.25A3.75 3.75 0 0 1 21 8v9.25A3.75 3.75 0 0 1 17.25 21H6.75A3.75 3.75 0 0 1 3 17.25V8a3.75 3.75 0 0 1 3.75-3.75H10V3.5H8.75A.75.75 0 0 1 8 2.75zm-1.25 3a2.25 2.25 0 0 0-2.25 2.25v9.25a2.25 2.25 0 0 0 2.25 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25V8a2.25 2.25 0 0 0-2.25-2.25H6.75zm9.53 5.78-4.75 4.75a.75.75 0 0 1-1.06 0l-2.25-2.25a.75.75 0 1 1 1.06-1.06L12 14.69l4.22-4.22a.75.75 0 1 1 1.06 1.06z"})),
+  tasksFilled: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M8 2.75A.75.75 0 0 1 8.75 2h6.5a.75.75 0 0 1 0 1.5H14v.75h3.25A3.75 3.75 0 0 1 21 8v9.25A3.75 3.75 0 0 1 17.25 21H6.75A3.75 3.75 0 0 1 3 17.25V8a3.75 3.75 0 0 1 3.75-3.75H10V3.5H8.75A.75.75 0 0 1 8 2.75zm8.28 8.78a.75.75 0 1 0-1.06-1.06L12 13.69l-1.72-1.72a.75.75 0 1 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.06 0l4.75-4.75z"})),
+  games: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M9 8.75a.75.75 0 0 0-1.5 0v1.75H5.75a.75.75 0 0 0 0 1.5H7.5v1.75a.75.75 0 0 0 1.5 0V12h1.75a.75.75 0 0 0 0-1.5H9V8.75zm7.5 0a.75.75 0 0 0-1 0 .75.75 0 1 0 1 0zM17 11.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5zm-1.5-1a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0zM17 8.25a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5zM7.25 6A5.25 5.25 0 0 0 2 11.25v1.5A5.25 5.25 0 0 0 7.25 18h.014c1.43 0 2.775-.674 3.63-1.817L12 15l1.105 1.183A4.535 4.535 0 0 0 16.735 18h.015A5.25 5.25 0 0 0 22 12.75v-1.5A5.25 5.25 0 0 0 16.75 6h-9.5zM3.5 11.25A3.75 3.75 0 0 1 7.25 7.5h9.5a3.75 3.75 0 0 1 3.75 3.75v1.5a3.75 3.75 0 0 1-3.75 3.75h-.015a3.035 3.035 0 0 1-2.43-1.216L12.96 13.6a1.25 1.25 0 0 0-1.92 0l-1.345 1.684a3.035 3.035 0 0 1-2.43 1.216H7.25a3.75 3.75 0 0 1-3.75-3.75v-1.5z"})),
+  gamesFilled: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M2 11.25A5.25 5.25 0 0 1 7.25 6h9.5A5.25 5.25 0 0 1 22 11.25v1.5A5.25 5.25 0 0 1 16.75 18h-.015a4.035 4.035 0 0 1-3.23-1.616l-.555-.739a1.25 1.25 0 0 0-1.9 0l-.555.74A4.035 4.035 0 0 1 7.265 18H7.25A5.25 5.25 0 0 1 2 12.75v-1.5zM9 8.75a.75.75 0 0 0-1.5 0v1.75H5.75a.75.75 0 0 0 0 1.5H7.5v1.75a.75.75 0 0 0 1.5 0V12h1.75a.75.75 0 0 0 0-1.5H9V8.75zm7.5 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM17 13a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5zm-1.5-1a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0zM17 8.25a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5z"})),
+  bell: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M12 1.75a6.25 6.25 0 0 0-6.25 6.25v3.384l-1.514 3.79a.75.75 0 0 0 .696 1.028h4.068a3 3 0 1 0 6 0h4.068a.75.75 0 0 0 .696-1.027l-1.514-3.791V8A6.25 6.25 0 0 0 12 1.75zM8.5 16.202h7a1.5 1.5 0 1 1-7 0v0zM12 3.25A4.75 4.75 0 0 1 16.75 8v3.528c0 .095.018.19.054.279l1.16 2.9H6.037l1.16-2.9a.75.75 0 0 0 .053-.278V8A4.75 4.75 0 0 1 12 3.25z"})),
+  bellFilled: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M12 1.75A6.247 6.247 0 0 0 5.754 8v3.384l-1.514 3.79a.75.75 0 0 0 .696 1.028H9a3 3 0 1 0 6 0h4.064a.75.75 0 0 0 .696-1.027l-1.514-3.791V8A6.25 6.25 0 0 0 12 1.752zm-1.5 14.452h3a1.5 1.5 0 0 1-3 0z"})),
+  /* Hamburger — haut et bas COURTS et CENTRÉS par rapport au milieu long (fidèle design 87) */
+  menu: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-label":"menu"},
+    React.createElement("rect",{x:4.5,y:5,width:15,height:2,rx:1}),  /* haut: court centré */
+    React.createElement("rect",{x:3,  y:11,width:18,height:2,rx:1}), /* milieu: long */
+    React.createElement("rect",{x:4.5,y:17,width:15,height:2,rx:1})  /* bas: court centré */
+  ),
+  back: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M10.733 19.79a.75.75 0 0 0 1.034-1.086L5.516 12.75h14.728a.75.75 0 0 0 0-1.5H5.516l6.251-5.954a.75.75 0 0 0-1.034-1.086l-7.42 7.067a.996.996 0 0 0-.3.58.753.753 0 0 0 .001.22c.02.113.063.222.128.322.037.058.08.112.129.16l7.462 7.23z"})),
+  close: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M4.089 4.215.02.083A.75.75 0 0 1 2.006-.038l.084.073L12 9.939 21.91.084a.75.75 0 0 1 1.133.977l-.073.084L13.061 11l9.91 9.856a.75.75 0 0 1-.976 1.133l-.084-.073L12 12.061l-9.91 9.855a.75.75 0 0 1-1.133-.977l.073-.084L10.939 11 1.03 1.144A.75.75 0 0 1 1.106.011l.084-.073 9.91 9.855z"})),
+  search: React.createElement("svg",{width:20,height:20,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M10 2.75a7.25 7.25 0 0 1 5.63 11.819l4.9 4.9a.75.75 0 0 1-1.06 1.061l-4.9-4.9A7.25 7.25 0 1 1 10 2.75zm0 1.5a5.75 5.75 0 1 0 0 11.5 5.75 5.75 0 0 0 0-11.5z"})),
+  plus: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M12.25 3a.75.75 0 0 1 .743.648l.007.102.001 7.5h7.5a.75.75 0 0 1 .102 1.493l-.102.007h-7.5l.001 7.5a.75.75 0 0 1-1.493.102l-.007-.102-.001-7.5h-7.5a.75.75 0 0 1-.102-1.493l.102-.007h7.5v-7.5a.75.75 0 0 1 .75-.75z"})),
+  chevR: React.createElement("svg",{width:20,height:20,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M8.465 18.505a.75.75 0 0 1-.04-1.024l.04-.042L13.942 12 8.465 6.56a.75.75 0 0 1-.04-1.024l.04-.042a.75.75 0 0 1 1.024-.04l.042.04 6 6a.75.75 0 0 1 .04 1.024l-.04.042-6 6a.75.75 0 0 1-1.066 0z"})),
+  chevL: React.createElement("svg",{width:20,height:20,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M15.535 5.495a.75.75 0 0 1 .04 1.024l-.04.042L10.058 12l5.477 5.44a.75.75 0 0 1 .04 1.024l-.04.042a.75.75 0 0 1-1.024.04l-.042-.04-6-6a.75.75 0 0 1-.04-1.024l.04-.042 6-6a.75.75 0 0 1 1.066 0z"})),
+  check: React.createElement("svg",{width:18,height:18,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M8.5 16.586 4.707 12.793a1 1 0 0 0-1.414 1.414l4.5 4.5a1 1 0 0 0 1.414 0l11-11a1 1 0 0 0-1.414-1.414L8.5 16.586z"})),
+  trash: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M14.5 6.5V6a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v.5H5.75a.75.75 0 0 0 0 1.5h.3l.785 10.202A2.75 2.75 0 0 0 9.577 20.75h4.846a2.75 2.75 0 0 0 2.743-2.548L17.95 8h.3a.75.75 0 0 0 0-1.5H14.5zM11 6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v.5h-2V6zm-3.446 12.087L6.801 8h10.398l-.753 10.087a1.25 1.25 0 0 1-1.246 1.163H9.577a1.25 1.25 0 0 1-1.246-1.163z"})),
+  calendar: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M5 3.5a2.5 2.5 0 0 0-2.5 2.5v12a2.5 2.5 0 0 0 2.5 2.5h14a2.5 2.5 0 0 0 2.5-2.5V6A2.5 2.5 0 0 0 19 3.5H5zM4 6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v1H4V6zm0 2.5h16V18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8.5z"})),
+  send: React.createElement("svg",{width:22,height:22,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M5.694 12 2.299 3.304c-.236-.605.347-1.19.943-.943l17.54 7.284c.611.253.611 1.108 0 1.361l-17.54 7.284c-.596.247-1.179-.338-.943-.943L5.694 12zM6.3 11.25h7.2a.75.75 0 0 1 0 1.5h-7.2l-2.326 5.96L18.946 12 3.974 5.79 6.3 11.25z"})),
+  attach: React.createElement("svg",{width:22,height:22,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M18.281 6.293a4.583 4.583 0 0 0-6.474 0L5.136 12.93a3.083 3.083 0 0 0 4.359 4.36l5.818-5.818a1.583 1.583 0 1 0-2.238-2.238L8.438 13.87a.75.75 0 1 0 1.06 1.06l4.639-4.637a.083.083 0 0 1 .118.118l-5.82 5.818a1.583 1.583 0 0 1-2.238-2.238l6.671-6.636a3.083 3.083 0 1 1 4.36 4.36l-6.568 6.567a.75.75 0 1 0 1.06 1.06l6.56-6.567a4.583 4.583 0 0 0 0-6.482z"})),
+  mic: React.createElement("svg",{width:22,height:22,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M12 3a3.5 3.5 0 0 0-3.5 3.5v5a3.5 3.5 0 1 0 7 0v-5A3.5 3.5 0 0 0 12 3zM10 6.5a2 2 0 1 1 4 0v5a2 2 0 1 1-4 0v-5zM5.75 11a.75.75 0 0 1 .75.75V12a5.5 5.5 0 0 0 11 0v-.25a.75.75 0 0 1 1.5 0V12a7.001 7.001 0 0 1-6.25 6.962V21.25a.75.75 0 0 1-1.5 0v-2.288A7.001 7.001 0 0 1 5 12v-.25a.75.75 0 0 1 .75-.75z"})),
+  phone: React.createElement("svg",{width:22,height:22,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M14.702 14.702c.365-.365.87-.519 1.362-.48l3.79.303c1.127.09 2.016.95 2.146 2.075l.003.12v3.033c0 1.186-.877 2.207-2.073 2.236-6.988.174-13.925-4.31-16.853-12.58C1.755 4.77 5.192 1.06 9.29 1c1.204-.018 2.112.956 2.14 2.1l.002.142-.06 3.85c-.008.507-.223.983-.602 1.316l-.122.1-2.02 1.481c2.094 3.45 4.3 5.656 7.744 7.743L17.853 16l-.102.112c-.36.39-.51.937-.405 1.462l.04.161a2.187 2.187 0 0 0 2.11 1.6 2.174 2.174 0 0 0 2.149-1.862V15.45l-.003-.03a.715.715 0 0 0-.657-.64L17.196 14.477c-.153-.012-.3.034-.414.128l-.07.069 1.494 1.494c-3.744-2.25-6.163-4.67-8.41-8.411l1.501-1.084.076-.08c.056-.067.09-.15.1-.234l.002-.032.063-3.876a.685.685 0 0 0-.698-.648c-3.394.05-6.252 3.106-4.894 6.85 2.67 7.553 8.971 11.617 15.339 11.459a.683.683 0 0 0 .675-.653l.002-.087v-3.032a.688.688 0 0 0-.598-.654l-.1-.011-3.794-.304-.07-.002c-.146 0-.29.055-.402.158l-.074.076L14.7 14.7z"})),
+  video: React.createElement("svg",{width:22,height:22,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M5.25 5.5A2.75 2.75 0 0 0 2.5 8.25v7.5a2.75 2.75 0 0 0 2.75 2.75H14A2.75 2.75 0 0 0 16.75 15.75v-7.5A2.75 2.75 0 0 0 14 5.5H5.25zM14 7a1.25 1.25 0 0 1 1.25 1.25v7.5A1.25 1.25 0 0 1 14 17H5.25A1.25 1.25 0 0 1 4 15.75v-7.5A1.25 1.25 0 0 1 5.25 7H14zm4.94 9.748-1.69-1.042v-7.412l1.69-1.042A1.25 1.25 0 0 1 21 8.317v7.366a1.25 1.25 0 0 1-2.06.065z"})),
+  check2: React.createElement("svg",{width:14,height:14,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M8.5 16.586 4.707 12.793a1 1 0 0 0-1.414 1.414l4.5 4.5a1 1 0 0 0 1.414 0l11-11a1 1 0 0 0-1.414-1.414L8.5 16.586z"})),
+  checkDouble: React.createElement("svg",{width:18,height:14,viewBox:"0 0 30 20",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M21.47 4.47a.75.75 0 0 1 1.06 1.06l-9 9a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 0 1 1.06-1.06L12 12.94l8.47-8.47zm-8 0a.75.75 0 0 1 1.06 1.06l-9 9a.75.75 0 0 1-1.06 0l-2.5-2.5a.75.75 0 0 1 1.06-1.06L4 12.94 12.47 4.47z"})),
+  location: React.createElement("svg",{width:14,height:14,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M12 2a8 8 0 0 1 8 8c0 3.075-1.64 5.79-3.872 8.07a22.126 22.126 0 0 1-3.367 2.821l-.246.162a.75.75 0 0 1-.75 0l-.246-.162a22.126 22.126 0 0 1-3.367-2.822C5.64 15.79 4 13.076 4 10a8 8 0 0 1 8-8zm0 1.5A6.5 6.5 0 0 0 5.5 10c0 2.615 1.41 5.008 3.436 7.078A20.626 20.626 0 0 0 12 19.58a20.626 20.626 0 0 0 3.064-2.502C17.089 15.008 18.5 12.615 18.5 10A6.5 6.5 0 0 0 12 3.5zm0 3.5a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 1.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"})),
+  clock: React.createElement("svg",{width:14,height:14,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 1.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zm-.75 3.25a.75.75 0 0 1 .743.648l.007.102v4.75h3.5a.75.75 0 0 1 .102 1.493l-.102.007h-4.25a.75.75 0 0 1-.743-.648l-.007-.102v-5.5a.75.75 0 0 1 .75-.75z"})),
+  settings: React.createElement("svg",{width:24,height:24,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M12.012 2.25c.734 0 1.442.09 2.12.258a.75.75 0 0 1 .563.715L14.745 4.755a1.125 1.125 0 0 0 1.131 1.131l1.533-.005a.75.75 0 0 1 .715.564 9.04 9.04 0 0 1 0 4.208.75.75 0 0 1-.715.563l-1.532-.005c-.625 0-1.132.505-1.132 1.132l.005 1.532a.75.75 0 0 1-.564.715 9.04 9.04 0 0 1-4.208 0 .75.75 0 0 1-.563-.715l.005-1.532a1.125 1.125 0 0 0-1.131-1.132l-1.533.005a.75.75 0 0 1-.715-.564 9.04 9.04 0 0 1 0-4.208.75.75 0 0 1 .715-.563l1.532.005A1.125 1.125 0 0 0 9.42 5.885L9.415 4.354a.75.75 0 0 1 .564-.715 9.04 9.04 0 0 1 2.033-.389zm-.004 6.75a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"})),
+  moon: React.createElement("svg",{width:20,height:20,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M15.127 2.112c.472-.196.936.298.699.75A9.006 9.006 0 0 0 21.75 12a.75.75 0 0 1 0 1.5 10.5 10.5 0 1 1-7.371-10.64.75.75 0 0 1 .748-.748z"})),
+  sun: React.createElement("svg",{width:20,height:20,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M12 17.25a5.25 5.25 0 1 0 0-10.5 5.25 5.25 0 0 0 0 10.5zm0-1.5a3.75 3.75 0 1 1 0-7.5 3.75 3.75 0 0 1 0 7.5zM12 1.75a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V2.5a.75.75 0 0 1 .75-.75zM5.05 5.05a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06L5.05 6.11a.75.75 0 0 1 0-1.06zm13.9 0a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0zM1.75 12a.75.75 0 0 1 .75-.75H4a.75.75 0 0 1 0 1.5H2.5a.75.75 0 0 1-.75-.75zM19.25 12a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H20a.75.75 0 0 1-.75-.75zM5.05 18.95a.75.75 0 0 1 0-1.06l1.06-1.06a.75.75 0 0 1 1.06 1.06l-1.06 1.06a.75.75 0 0 1-1.06 0zm13.9 0a.75.75 0 0 1-1.06 0l-1.06-1.06a.75.75 0 0 1 1.06-1.06l1.06 1.06a.75.75 0 0 1 0 1.06zM12 19.25a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V20a.75.75 0 0 1 .75-.75z"})),
+  heart: React.createElement("svg",{width:20,height:20,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M2 8.5a5.5 5.5 0 0 1 10-3.161A5.5 5.5 0 0 1 22 8.5c0 5.22-5.643 9.339-9.467 11.474-.331.185-.735.185-1.066 0C7.642 17.839 2 13.72 2 8.5zm5.5-4a4 4 0 0 0-4 4c0 2.075 1.1 4.05 2.789 5.817C7.932 15.986 10 17.477 12 18.601c2-1.124 4.068-2.615 5.711-4.284 1.688-1.766 2.789-3.742 2.789-5.817a4 4 0 0 0-7.351-2.194.75.75 0 0 1-1.298 0A3.994 3.994 0 0 0 7.5 4.5z"})),
+  /* Diamond Fluent-style — forme large hexagonale avec 3 facettes top + 3 petits sparkles (fidèle design 87) */
+  gem: React.createElement("svg",{width:22,height:22,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor","stroke-width":1.8,"stroke-linecap":"round","stroke-linejoin":"round","aria-hidden":true},
+    /* Contour principal: diamant hexagonal plat en haut, pointe en bas */
+    React.createElement("path",{d:"M6 4h12l3 5-9 11L3 9z"}),
+    /* Facettes internes (haut + losange central qui descend vers la pointe) */
+    React.createElement("path",{d:"M3 9h18M8 4l-3 5 7 11M16 4l3 5-7 11M8 4l4 5 4-5M8 4l4 5"}),
+    /* 3 petits traits de brillance (sparkle) en haut à droite */
+    React.createElement("path",{d:"M20 1.5l.5 1M22.3 3l-1 .4M20.5 5l-.7-.5","stroke-linecap":"round"})
+  ),
+  info: React.createElement("svg",{width:22,height:22,viewBox:"0 0 24 24",fill:"currentColor","aria-hidden":true},React.createElement("path",{d:"M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 1.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zm-.001 6.5a.75.75 0 0 1 .744.648l.007.102.004 5.502a.75.75 0 0 1-1.493.102l-.007-.102-.004-5.502a.75.75 0 0 1 .75-.75zM12 7.003a.95.95 0 1 1 0 1.899.95.95 0 0 1 0-1.9z"})),
+};
+
+/* === AVATAR === (initials on colored circle) */
+function CmAvatar(props) {
+  var name = props.name || "?";
+  var size = props.size || 40;
+  var info = cmAvatar(name);
+  var border = props.border;
+  return React.createElement("div", {
+    style: {
+      width: size, height: size, borderRadius: "50%",
+      background: info.color, color: "white",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: Math.round(size * 0.4), fontWeight: 700,
+      fontFamily: "inherit", flexShrink: 0,
+      boxShadow: border ? ("0 0 0 2.5px " + (typeof border === "string" ? border : CM.primary) + ", 0 0 0 4.5px white") : "none",
+      userSelect: "none",
+    }
+  }, info.initials);
+}
+
+/* === BUTTON === */
+function CmBtn(props) {
+  var variant = props.variant || "primary";
+  var size = props.size || "md";
+  var sizes = {
+    sm: { padding: "8px 14px", fontSize: 12, borderRadius: 10 },
+    md: { padding: "12px 20px", fontSize: 14, borderRadius: 12 },
+    lg: { padding: "15px 26px", fontSize: 15, borderRadius: 14 },
+  };
+  var variants = {
+    primary:   { background: CM.primary, color: CM.onPrimary, border: "none", boxShadow: CM.shadowGlow },
+    secondary: { background: CM.surface2, color: CM.title, border: "none" },
+    outline:   { background: "transparent", color: CM.primary, border: "1.5px solid " + CM.primary },
+    ghost:     { background: "transparent", color: CM.body, border: "none" },
+    soft:      { background: CM.primaryFaint, color: CM.primary, border: "none" },
+  };
+  var base = {
+    fontFamily: "inherit", fontWeight: 700,
+    cursor: props.disabled ? "not-allowed" : "pointer",
+    opacity: props.disabled ? 0.5 : 1,
+    transition: "transform 0.12s",
+    display: "inline-flex", alignItems: "center", justifyContent: "center",
+    gap: 8, userSelect: "none",
+    width: props.fullWidth ? "100%" : "auto",
+  };
+  return React.createElement("button", {
+    onClick: props.disabled ? null : props.onClick,
+    type: props.type || "button",
+    style: Object.assign({}, base, sizes[size], variants[variant], props.style || {}),
+  }, props.children);
+}
+
+/* === FILTER PILL === (like All/Unread/Groups/Favoris in screens) */
+function CmPill(props) {
+  var active = props.active;
+  return React.createElement("button", {
+    onClick: props.onClick,
+    style: {
+      padding: "8px 16px", borderRadius: 100,
+      background: active ? CM.primarySoft : (CM.darkMode ? CM.surface2 : CM.surface2),
+      color: active ? CM.primaryDark : CM.body,
+      border: "none", fontSize: 13, fontWeight: 600,
+      cursor: "pointer", fontFamily: "inherit",
+      transition: "background 0.15s",
+      flexShrink: 0,
+    }
+  }, props.children);
+}
+
+/* === SEARCH BAR === (home style) */
+function CmSearch(props) {
+  return React.createElement("div", {
+    onClick: props.onClick,
+    style: {
+      display: "flex", alignItems: "center", gap: 10,
+      background: CM.surface2, borderRadius: 14,
+      padding: "11px 14px", cursor: props.onClick ? "pointer" : "default",
+      margin: props.margin || "0 22px",
+    }
+  },
+    React.createElement("span", { style: { color: CM.muted, display: "inline-flex" } }, Cmi.search),
+    props.value !== undefined ?
+      React.createElement("input", {
+        value: props.value,
+        onChange: function(e){ props.onChange && props.onChange(e.target.value); },
+        placeholder: props.placeholder || cm("search_placeholder"),
+        style: {
+          flex: 1, border: "none", outline: "none", background: "transparent",
+          fontFamily: "inherit", fontSize: 14, color: CM.body,
+        }
+      }) :
+      React.createElement("span", { style: { flex: 1, color: CM.muted, fontSize: 14 } }, props.placeholder || cm("search_placeholder"))
+  );
+}
+
+/* === TOAST === */
+var _cmToastTimer = null;
+function cmToast(msg, type) {
+  type = type || "info";
+  var el = document.getElementById("cm-toast");
+  if (!el) { el = document.createElement("div"); el.id = "cm-toast"; document.body.appendChild(el); }
+  var bg = type === "error" ? "#FF4757" : CM.primary;
+  el.textContent = msg;
+  el.style.cssText =
+    "position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(0);z-index:9999;" +
+    "background:" + bg + ";color:" + CM.onPrimary + ";padding:12px 22px;border-radius:14px;" +
+    "font:600 13px 'Plus Jakarta Sans',sans-serif;" +
+    "box-shadow:0 8px 24px rgba(0,0,0,0.2);opacity:1;max-width:85%;text-align:center;" +
+    "transition:opacity .3s, transform .3s;";
+  if (_cmToastTimer) clearTimeout(_cmToastTimer);
+  _cmToastTimer = setTimeout(function() {
+    if (el) { el.style.opacity = "0"; el.style.transform = "translateX(-50%) translateY(-20px)"; }
+  }, 2200);
+}
+
+/* === TOP HEADER ===
+ * Left slot + centered chameleon logo (tappable → theme palette) + right slot.
+ * The logo is the signature element of the app. */
+function CmHeader(props) {
+  return React.createElement("div", {
+    style: {
+      height: 64, padding: "0 18px",
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      background: CM.bg,
+      position: "sticky", top: 0, zIndex: 40,
+    }
+  },
+    /* Left slot */
+    React.createElement("div", { style: { width: 42, display: "flex", alignItems: "center", justifyContent: "flex-start" } },
+      props.left || null
+    ),
+    /* Centered chameleon — tap → open theme picker */
+    React.createElement("button", {
+      onClick: props.onLogoTap,
+      style: { background: "transparent", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit" },
+      "aria-label": cm("theme"),
+    },
+      React.createElement(ChameleonLogo, { size: 72 }),
+      props.title && React.createElement("span", {
+        style: { fontSize: 20, fontWeight: 800, color: CM.title }
+      }, props.title)
+    ),
+    /* Right slot */
+    React.createElement("div", { style: { width: 42, display: "flex", alignItems: "center", justifyContent: "flex-end" } },
+      props.right || null
+    )
+  );
+}
+
+function CmIconBtn(props) {
+  return React.createElement("button", {
+    onClick: props.onClick,
+    style: Object.assign({
+      width: 42, height: 42, borderRadius: 12,
+      background: "transparent", border: "none",
+      color: props.color || CM.body, cursor: "pointer",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontFamily: "inherit", position: "relative",
+    }, props.style || {}),
+    "aria-label": props.label,
+  }, props.children,
+    props.badge && React.createElement("span", {
+      style: {
+        position: "absolute", top: 6, right: 6,
+        width: 8, height: 8, borderRadius: "50%",
+        background: CM.primary, border: "2px solid " + CM.bg,
+      }
+    })
+  );
+}
+
+/* === BOTTOM NAV === */
+function CmBottomNav(props) {
+  var items = props.items; /* [{id,label,icon,badge}] */
+  var active = props.active;
+  return React.createElement("div", {
+    style: {
+      flexShrink: 0,
+      background: CM.bg,
+      borderTop: "1px solid " + CM.line,
+      display: "flex", alignItems: "center", justifyContent: "space-around",
+      padding: "8px 0",
+      paddingBottom: "calc(8px + env(safe-area-inset-bottom))",
+    }
+  },
+    items.map(function(it) {
+      var isActive = active === it.id;
+      return React.createElement("button", {
+        key: it.id,
+        onClick: function(){ props.onNav(it.id); },
+        style: {
+          background: "none", border: "none", cursor: "pointer",
+          padding: "6px 10px",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+          fontFamily: "inherit",
+          color: isActive ? CM.primary : CM.muted,
+          position: "relative",
+        }
+      },
+        /* Active pill background */
+        isActive && React.createElement("div", {
+          style: {
+            position: "absolute", top: 2, width: 44, height: 30, borderRadius: 14,
+            background: CM.primarySoft, zIndex: 0,
+          }
+        }),
+        React.createElement("span", { style: { position: "relative", zIndex: 1 } }, it.icon,
+          it.badge && React.createElement("span", {
+            style: { position: "absolute", top: -4, right: -4, width: 8, height: 8, borderRadius: "50%", background: CM.primary, border: "2px solid " + CM.bg }
+          })
+        ),
+        React.createElement("span", { style: { fontSize: 11, fontWeight: isActive ? 800 : 600, position: "relative", zIndex: 1 } }, it.label)
+      );
+    })
+  );
+}
+
+/* === FAB === floating bottom-right (new chat) */
+function CmFab(props) {
+  return React.createElement("button", {
+    onClick: props.onClick,
+    style: Object.assign({
+      position: "fixed",
+      bottom: 90, right: "max(20px, calc(50% - 240px + 20px))",
+      width: 52, height: 52, borderRadius: 16,
+      background: CM.primary, color: CM.onPrimary,
+      border: "none", cursor: "pointer",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      boxShadow: CM.shadowGlow,
+      zIndex: 60,
+    }, props.style || {})
+  }, props.children || Cmi.chat);
+}
+
+/* === SHEET (bottom sheet modal) === */
+function CmSheet(props) {
+  return React.createElement("div", {
+    onClick: props.onClose,
+    style: {
+      position: "fixed", inset: 0, zIndex: 500,
+      background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)",
+      display: "flex", alignItems: "flex-end",
+      animation: "cmFadeIn 0.2s",
+    }
+  },
+    React.createElement("div", {
+      onClick: function(e){ e.stopPropagation(); },
+      style: {
+        background: CM.bg, width: "100%", maxWidth: 480, margin: "0 auto",
+        borderRadius: "24px 24px 0 0", padding: "22px",
+        maxHeight: "85vh", overflowY: "auto",
+        animation: "cmSlideUp 0.25s",
+      }
+    },
+      React.createElement("div", { style: { width: 40, height: 4, borderRadius: 4, background: CM.line2, margin: "0 auto 18px" } }),
+      props.children
+    )
+  );
+}
+
+/* === THEME PALETTE (tap on chameleon) === */
+function CmThemePalette(props) {
+  var useState = React.useState;
+  var [, force] = useState(0);
+  var currentId = CM.themeId;
+  var lightThemes = Object.values(CM_THEMES).filter(function(t){ return !t.darkMode; });
+  var dark = CM_THEMES.dark;
+  return React.createElement(CmSheet, { onClose: props.onClose },
+    React.createElement("h3", {
+      style: { margin: 0, fontSize: 20, fontWeight: 800, color: CM.title, textAlign: "center" }
+    }, cm("themes")),
+    React.createElement("p", {
+      style: { margin: "6px 0 22px", fontSize: 13, color: CM.sub, textAlign: "center" }
+    }, cm("themeDesc")),
+    /* Color grid */
+    React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 } },
+      lightThemes.map(function(t){
+        var active = t.id === currentId;
+        return React.createElement("button", {
+          key: t.id,
+          onClick: function(){ cmApplyTheme(t.id); force(Date.now()); if(props.onChange) props.onChange(t.id); },
+          style: {
+            background: "transparent", border: "none", cursor: "pointer",
+            padding: 8, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+            fontFamily: "inherit",
+          }
+        },
+          React.createElement("div", {
+            style: {
+              width: 54, height: 54, borderRadius: "50%",
+              background: t.primary,
+              boxShadow: active ? ("0 0 0 3px " + CM.bg + ", 0 0 0 5px " + t.primary) : "0 4px 12px " + hexToRgba(t.primary, 0.35),
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "white", fontSize: 20,
+              transition: "transform 0.15s",
+              transform: active ? "scale(1.08)" : "scale(1)",
+            }
+          }, active ? "✓" : ""),
+          React.createElement("span", { style: { fontSize: 11, fontWeight: 600, color: CM.sub } }, t.name)
+        );
+      })
+    ),
+    /* Dark mode toggle */
+    React.createElement("div", {
+      style: {
+        marginTop: 22, padding: "14px 16px", borderRadius: 14,
+        background: CM.surface2,
+        display: "flex", alignItems: "center", gap: 12,
+      }
+    },
+      React.createElement("div", { style: { color: CM.body } }, Cmi.moon),
+      React.createElement("div", { style: { flex: 1 } },
+        React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: CM.title } }, cm("darkMode")),
+        React.createElement("div", { style: { fontSize: 12, color: CM.sub, marginTop: 2 } }, dark.name)
+      ),
+      React.createElement("button", {
+        onClick: function(){
+          cmApplyTheme(CM.darkMode ? "mint" : "dark");
+          force(Date.now());
+          if (props.onChange) props.onChange(CM.themeId);
+        },
+        style: {
+          width: 46, height: 26, borderRadius: 100,
+          background: CM.darkMode ? CM.primary : CM.line2, border: "none",
+          position: "relative", cursor: "pointer", padding: 0,
+          transition: "background 0.2s",
+        }
+      },
+        React.createElement("div", {
+          style: {
+            position: "absolute", top: 3,
+            left: CM.darkMode ? 23 : 3, width: 20, height: 20, borderRadius: "50%",
+            background: "white", transition: "left 0.2s",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+          }
+        })
+      )
+    )
+  );
+}
+
+
+/* ══════ js/screens-onboarding.js ══════ */
+/* Chrome Messenger — Onboarding (welcome, phone, OTP, profile setup) */
+
+function OnboardingFlow(props) {
+  var useState = React.useState;
+  var [step, setStep] = useState("welcome"); /* welcome | phone | otp | profile */
+  var [phone, setPhone] = useState("");
+  var [code, setCode] = useState("");
+  var [name, setName] = useState("");
+  var [sentCode, setSentCode] = useState("");
+  var [err, setErr] = useState("");
+
+  function sendCode() {
+    if (!phone || phone.length < 6) { setErr("Numero invalide"); return; }
+    /* Simulate SMS — real 6-digit code */
+    var generated = String(100000 + Math.floor(Math.random() * 900000));
+    setSentCode(generated);
+    setErr("");
+    setStep("otp");
+    /* Show the code in a toast for demo purposes (no real SMS) */
+    cmToast("Code demo: " + generated, "info");
+  }
+
+  function verify() {
+    if (code === sentCode) {
+      setErr("");
+      setStep("profile");
+    } else {
+      setErr("Code incorrect");
+    }
+  }
+
+  function finish() {
+    if (!name.trim()) { setErr("Ton nom est requis"); return; }
+    cmSetProfile({
+      id: "me", name: name.trim(), phone: phone,
+      avatar: null, bio: "", createdAt: Date.now(),
+    });
+    cmSetOnboarded(true);
+    cmSeedIfNeeded();
+    props.onDone();
+  }
+
+  return React.createElement("div", {
+    style: { minHeight: "100vh", background: CM.bg, display: "flex", flexDirection: "column" }
+  },
+    step === "welcome" && React.createElement("div", {
+      style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }
+    },
+      React.createElement("div", { style: { marginBottom: 28 } },
+        React.createElement(ChameleonLogo, { size: 200 })
+      ),
+      React.createElement("h1", {
+        style: { fontSize: 16, fontWeight: 600, color: CM.sub, margin: "0 0 6px" }
+      }, cm("welcome")),
+      React.createElement("h2", {
+        style: { fontSize: 32, fontWeight: 800, color: CM.title, margin: "0 0 12px", letterSpacing: "-0.5px" }
+      }, cm("appName")),
+      React.createElement("p", {
+        style: { fontSize: 15, color: CM.sub, margin: "0 0 40px", maxWidth: 320, lineHeight: 1.5 }
+      }, cm("welcomeSub")),
+      React.createElement(CmBtn, { variant: "primary", size: "lg", fullWidth: true, onClick: function(){ setStep("phone"); }, style: { maxWidth: 320 } },
+        cm("getStarted")
+      )
+    ),
+
+    step === "phone" && React.createElement("div", {
+      style: { flex: 1, padding: 24, display: "flex", flexDirection: "column" }
+    },
+      React.createElement("button", {
+        onClick: function(){ setStep("welcome"); },
+        style: iconBtnStyle()
+      }, Cmi.back),
+      React.createElement("div", { style: { marginTop: 20, marginBottom: 32, display: "flex", justifyContent: "center" } },
+        React.createElement(ChameleonLogo, { size: 110 })
+      ),
+      React.createElement("h2", { style: { fontSize: 24, fontWeight: 800, color: CM.title, marginBottom: 8 } }, cm("enterPhone")),
+      React.createElement("p", { style: { fontSize: 14, color: CM.sub, marginBottom: 28 } }, cm("phoneDesc")),
+      React.createElement("input", {
+        type: "tel", value: phone,
+        onChange: function(e){ setPhone(e.target.value); },
+        placeholder: cm("phonePlaceholder"),
+        style: inputStyle(),
+        autoFocus: true,
+      }),
+      err && React.createElement("p", { style: errStyle() }, err),
+      React.createElement("div", { style: { flex: 1 } }),
+      React.createElement(CmBtn, { variant: "primary", size: "lg", fullWidth: true, onClick: sendCode }, cm("sendCode"))
+    ),
+
+    step === "otp" && React.createElement("div", {
+      style: { flex: 1, padding: 24, display: "flex", flexDirection: "column" }
+    },
+      React.createElement("button", {
+        onClick: function(){ setStep("phone"); },
+        style: iconBtnStyle()
+      }, Cmi.back),
+      React.createElement("div", { style: { marginTop: 20, marginBottom: 32, display: "flex", justifyContent: "center" } },
+        React.createElement(ChameleonLogo, { size: 110 })
+      ),
+      React.createElement("h2", { style: { fontSize: 24, fontWeight: 800, color: CM.title, marginBottom: 8 } }, cm("enterCode")),
+      React.createElement("p", { style: { fontSize: 14, color: CM.sub, marginBottom: 28 } }, cm("codeDesc") + " (" + phone + ")"),
+      React.createElement("input", {
+        type: "tel", value: code,
+        onChange: function(e){ setCode(e.target.value.replace(/\D/g,"").substring(0,6)); },
+        placeholder: "• • • • • •",
+        maxLength: 6,
+        style: Object.assign({}, inputStyle(), { letterSpacing: "0.5em", textAlign: "center", fontSize: 24, fontWeight: 700 }),
+        autoFocus: true,
+      }),
+      err && React.createElement("p", { style: errStyle() }, err),
+      React.createElement("button", {
+        onClick: sendCode,
+        style: {
+          background: "transparent", border: "none", color: CM.primary, fontFamily: "inherit",
+          fontSize: 13, fontWeight: 600, cursor: "pointer", padding: "10px 0",
+        }
+      }, cm("codeNotReceived")),
+      React.createElement("div", { style: { flex: 1 } }),
+      React.createElement(CmBtn, {
+        variant: "primary", size: "lg", fullWidth: true,
+        disabled: code.length !== 6, onClick: verify
+      }, cm("verify"))
+    ),
+
+    step === "profile" && React.createElement("div", {
+      style: { flex: 1, padding: 24, display: "flex", flexDirection: "column" }
+    },
+      React.createElement("div", { style: { marginTop: 20, marginBottom: 32, display: "flex", justifyContent: "center" } },
+        React.createElement(ChameleonLogo, { size: 110 })
+      ),
+      React.createElement("h2", { style: { fontSize: 24, fontWeight: 800, color: CM.title, marginBottom: 8 } }, cm("profileSetup")),
+      React.createElement("p", { style: { fontSize: 14, color: CM.sub, marginBottom: 28 } }, cm("profileDesc")),
+
+      /* Avatar placeholder */
+      React.createElement("div", {
+        style: {
+          width: 100, height: 100, borderRadius: "50%",
+          background: CM.primarySoft, color: CM.primaryDark,
+          fontSize: 40, fontWeight: 800,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          margin: "0 auto 18px", boxShadow: CM.shadow,
+        }
+      }, name ? name.trim().split(" ").map(function(w){return w[0]||"";}).slice(0,2).join("").toUpperCase() : "👤"),
+
+      React.createElement("input", {
+        value: name,
+        onChange: function(e){ setName(e.target.value); },
+        placeholder: cm("yourName"),
+        style: inputStyle(),
+        maxLength: 40,
+        autoFocus: true,
+      }),
+      err && React.createElement("p", { style: errStyle() }, err),
+      React.createElement("div", { style: { flex: 1 } }),
+      React.createElement(CmBtn, {
+        variant: "primary", size: "lg", fullWidth: true,
+        disabled: !name.trim(), onClick: finish
+      }, cm("finish"))
+    )
+  );
+}
+
+function inputStyle() {
+  return {
+    width: "100%", padding: "14px 16px", borderRadius: 14,
+    border: "1.5px solid " + CM.line, background: CM.surface,
+    fontFamily: "inherit", fontSize: 15, color: CM.body,
+    outline: "none", boxSizing: "border-box",
+  };
+}
+function iconBtnStyle() {
+  return {
+    width: 42, height: 42, borderRadius: 12,
+    background: CM.surface2, border: "none", color: CM.body,
+    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+    fontFamily: "inherit",
+  };
+}
+function errStyle() {
+  return { color: "#FF4757", fontSize: 13, fontWeight: 600, marginTop: 8 };
+}
+
+
+/* ══════ js/screens-home.js ══════ */
+/* Chrome Messenger — Home screen (Stories + Discussions + filters) */
+
+function HomeScreen(props) {
+  var useState = React.useState;
+  var [filter, setFilter] = useState("all");
+  var [searchQ, setSearchQ] = useState("");
+  var [searchOpen, setSearchOpen] = useState(false);
+  var [themeOpen, setThemeOpen] = useState(false);
+
+  var contacts = cmGetContacts();
+  var conversations = cmGetConversations();
+  var stories = cmGetStories();
+
+  /* Filter conversations */
+  var rows = conversations.map(function(c) {
+    var other = c.type === "direct" ? cmContactById(contacts, c.contactId) : null;
+    var lastMsg = cmLastMessage(c.id);
+    var msgs = cmGetMessages(c.id);
+    var unread = msgs.filter(function(m){ return m.authorId !== "me" && m.readByMe === false; }).length;
+    var name = c.type === "group" ? c.name : (other ? other.name : "Inconnu");
+    return { conv: c, other: other, lastMsg: lastMsg, unread: unread, name: name };
+  });
+
+  if (filter === "unread") rows = rows.filter(function(r){ return r.unread > 0; });
+  if (filter === "groups") rows = rows.filter(function(r){ return r.conv.type === "group"; });
+  if (filter === "favoris") rows = rows.filter(function(r){ return r.other && r.other.favorite; });
+  if (searchQ) {
+    var q = searchQ.toLowerCase();
+    rows = rows.filter(function(r){ return r.name.toLowerCase().indexOf(q) !== -1; });
+  }
+
+  /* Sort by lastMsgAt desc, pinned first */
+  rows.sort(function(a,b){
+    if (a.conv.pinned !== b.conv.pinned) return a.conv.pinned ? -1 : 1;
+    return (b.conv.lastMsgAt || 0) - (a.conv.lastMsgAt || 0);
+  });
+
+  return React.createElement("div", { style: { paddingBottom: 20, background: CM.bg } },
+    React.createElement(CmHeader, {
+      onLogoTap: function(){ setThemeOpen(true); },
+      left: React.createElement(CmIconBtn, { onClick: props.onOpenPremium, label: "premium", color: CM.body }, Cmi.gem),
+      right: React.createElement(CmIconBtn, { onClick: props.onOpenMenu, label: "menu" }, Cmi.menu),
+    }),
+
+    /* Stories */
+    React.createElement("div", { style: { padding: "6px 22px 0" } },
+      React.createElement("h2", {
+        style: { margin: 0, fontSize: 20, fontWeight: 800, color: CM.title, marginBottom: 12 }
+      }, cm("stories")),
+      React.createElement("div", {
+        style: { display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }
+      },
+        /* Add story tile */
+        React.createElement("div", {
+          onClick: props.onAddStory,
+          style: {
+            flexShrink: 0, width: 78, height: 104, borderRadius: 14,
+            background: CM.surface2,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: 6, cursor: "pointer",
+          }
+        },
+          React.createElement("div", {
+            style: { width: 34, height: 34, borderRadius: "50%", border: "1.5px solid " + CM.line2, display: "flex", alignItems: "center", justifyContent: "center", color: CM.body }
+          }, Cmi.plus),
+          React.createElement("div", { style: { fontSize: 12, fontWeight: 600, color: CM.body, textAlign: "center", lineHeight: 1.2 } }, cm("addColors"))
+        ),
+        /* Other stories */
+        stories.map(function(s) {
+          var owner = cmContactById(contacts, s.ownerId);
+          if (!owner) return null;
+          return React.createElement("div", {
+            key: s.id,
+            onClick: function(){ props.onViewStory(s.id); },
+            /* Extra padding-bottom leaves room for avatar that straddles the box */
+            style: { flexShrink: 0, width: 78, cursor: "pointer", paddingBottom: 22 }
+          },
+            React.createElement("div", {
+              style: {
+                width: 78, height: 104, borderRadius: 14,
+                background: s.bg || CM.primarySoft,
+                position: "relative", overflow: "visible",
+              }
+            },
+              /* Avatar à cheval — cercle fin WhatsApp-style autour (couleur thème) si non vu */
+              React.createElement("div", {
+                style: {
+                  position: "absolute", bottom: -16, left: "50%", transform: "translateX(-50%)",
+                  padding: s.viewed ? 0 : 2,
+                  borderRadius: "50%",
+                  background: s.viewed ? "transparent" : CM.primary,
+                }
+              },
+                React.createElement("div", {
+                  style: {
+                    padding: s.viewed ? 0 : 1.5,
+                    borderRadius: "50%",
+                    background: CM.bg,
+                  }
+                },
+                  React.createElement(CmAvatar, { name: owner.name, size: 32 })
+                )
+              )
+            ),
+            /* Prénom sur ligne 1, nom sur ligne 2 — MÊME taille/poids que noms dans Discussions (15px / 700) */
+            (function(){
+              var parts = owner.name.split(" ");
+              var first = parts[0];
+              var last = parts.slice(1).join(" ");
+              return React.createElement("div", {
+                style: {
+                  marginTop: 22, textAlign: "center", lineHeight: 1.2,
+                  color: CM.title, fontSize: 15, fontWeight: 700,
+                }
+              },
+                React.createElement("div", null, first),
+                last && React.createElement("div", null, last)
+              );
+            })()
+          );
+        })
+      )
+    ),
+
+    /* Chat section header — espace réduit avec statuts */
+    React.createElement("div", { style: { padding: "6px 22px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" } },
+      React.createElement("h2", {
+        style: { margin: 0, fontSize: 20, fontWeight: 800, color: CM.title }
+      }, cm("discussions")),
+      searchOpen && React.createElement(CmIconBtn, { onClick: function(){ setSearchOpen(false); setSearchQ(""); }, label: "close" }, Cmi.close)
+    ),
+
+    /* Search */
+    React.createElement(CmSearch, searchOpen ? {
+      value: searchQ,
+      onChange: setSearchQ,
+      placeholder: cm("search_placeholder"),
+    } : {
+      onClick: function(){ setSearchOpen(true); },
+    }),
+
+    /* Filters */
+    React.createElement("div", {
+      style: { display: "flex", gap: 8, padding: "14px 22px 4px", overflowX: "auto" }
+    },
+      ["all","unread","groups","favoris"].map(function(id) {
+        return React.createElement(CmPill, {
+          key: id, active: filter === id,
+          onClick: function(){ setFilter(id); },
+        }, cm("filter_" + id));
+      })
+    ),
+
+    /* Conversations list */
+    React.createElement("div", { style: { padding: "6px 22px 0" } },
+      rows.length === 0 && React.createElement("div", {
+        style: { textAlign: "center", padding: 40, color: CM.muted, fontSize: 14 }
+      }, cm("comingSoon") || "Aucune conversation"),
+      rows.map(function(r) {
+        return React.createElement("div", {
+          key: r.conv.id,
+          onClick: function(){ props.onOpenChat(r.conv.id); },
+          style: {
+            display: "flex", alignItems: "center", gap: 12,
+            padding: "12px 0", cursor: "pointer",
+            borderBottom: "1px solid " + CM.line,
+          }
+        },
+          React.createElement(CmAvatar, { name: r.name, size: 32 }),
+          React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+            React.createElement("div", {
+              style: { display: "flex", alignItems: "center", gap: 6 }
+            },
+              r.conv.pinned && React.createElement("span", { style: { fontSize: 11 } }, "📌"),
+              React.createElement("div", {
+                style: { fontSize: 15, fontWeight: r.unread ? 800 : 700, color: CM.title, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }
+              }, r.name)
+            ),
+            React.createElement("div", {
+              style: {
+                fontSize: 13, color: r.unread ? CM.body : CM.sub,
+                fontWeight: r.unread ? 600 : 500,
+                marginTop: 2, display: "flex", alignItems: "center", gap: 4,
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              }
+            },
+              r.lastMsg && r.lastMsg.authorId === "me" && React.createElement("span", {
+                style: { color: CM.primary, display: "inline-flex" }
+              }, Cmi.checkDouble),
+              React.createElement("span", null, r.lastMsg ? cmMsgText(r.lastMsg) : "...")
+            )
+          ),
+          React.createElement("div", { style: { textAlign: "right", flexShrink: 0, minWidth: 44 } },
+            React.createElement("div", {
+              style: { fontSize: 11, color: r.unread ? CM.primary : CM.muted, fontWeight: 600 }
+            }, r.lastMsg ? cmFmtDayLabel(r.lastMsg.at).substring(0,8) : ""),
+            r.unread > 0 && React.createElement("div", {
+              style: {
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                minWidth: 20, height: 20, borderRadius: 10, padding: "0 6px",
+                background: CM.primary, color: CM.onPrimary,
+                fontSize: 11, fontWeight: 800, marginTop: 4,
+              }
+            }, r.unread)
+          )
+        );
+      })
+    ),
+
+    /* FAB */
+    React.createElement(CmFab, { onClick: props.onNewChat }),
+
+    /* Theme palette sheet */
+    themeOpen && React.createElement(CmThemePalette, {
+      onClose: function(){ setThemeOpen(false); },
+      onChange: function(){ if (props.onThemeChange) props.onThemeChange(); },
+    })
+  );
+}
+
+
+/* ══════ js/screens-chat.js ══════ */
+/* Chrome Messenger — Chat conversation screen */
+
+function ChatScreen(props) {
+  var useState = React.useState;
+  var useEffect = React.useEffect;
+  var useRef = React.useRef;
+  var [input, setInput] = useState("");
+  var [, forceRender] = useState(0);
+  var [callMenu, setCallMenu] = useState(false);
+  var [addTaskOpen, setAddTaskOpen] = useState(false);
+  var scrollRef = useRef(null);
+  var inputRef = useRef(null);
+
+  var conv = cmFindConversation(props.convId);
+  if (!conv) return null;
+  var contacts = cmGetContacts();
+  var other = conv.type === "direct" ? cmContactById(contacts, conv.contactId) : null;
+  var title = conv.type === "group" ? conv.name : (other ? other.name : "Inconnu");
+
+  var messages = cmGetMessages(conv.id);
+
+  useEffect(function(){
+    /* Decrypt all messages of this conversation on open (lazy, per-conv) */
+    cmDecryptConversation(conv.id).then(function(){
+      /* Mark incoming as read */
+      var msgs = cmGetMessages(conv.id);
+      var changed = false;
+      msgs.forEach(function(m){ if (m.authorId !== "me" && m.readByMe === false) { m.readByMe = true; changed = true; } });
+      if (changed) cmSetMessages(conv.id, msgs);
+      /* Prune old messages (keep hot 200) */
+      cmPruneOldMessages(conv.id);
+      forceRender(Date.now());
+      setTimeout(function(){
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }, 20);
+    });
+  }, [conv.id]);
+
+  async function send() {
+    var text = input.trim();
+    if (!text) return;
+    await cmAddEncryptedMessage(conv.id, text, "me");
+    /* Decrypt the one we just stored for display */
+    var msgs = cmGetMessages(conv.id);
+    var last = msgs[msgs.length - 1];
+    last._text = text; /* shortcut: we already have plaintext */
+    setInput("");
+    forceRender(Date.now());
+    setTimeout(function(){
+      if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }, 20);
+    /* Simulated encrypted auto-reply after 1.5s */
+    if (conv.type === "direct" && other) {
+      setTimeout(async function(){
+        var replies = ["Ah ouais ?", "Je vois.", "D'accord 👍", "Cool !", "On en parle plus tard"];
+        var r = replies[Math.floor(Math.random() * replies.length)];
+        /* Encrypt incoming message with the same shared key (as if server relayed) */
+        var payload = await cmEncryptMessage(conv.id, r);
+        cmAddMessage(conv.id, {
+          authorId: other.id, at: Date.now(), readByMe: false, cipher: payload,
+          _text: r, /* already have plaintext */
+        });
+        forceRender(Date.now());
+        setTimeout(function(){
+          if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }, 20);
+      }, 1500);
+    }
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  }
+
+  /* Group messages by day for day dividers */
+  var groupedByDay = [];
+  var lastDay = null;
+  messages.forEach(function(m){
+    var d = new Date(m.at); d.setHours(0,0,0,0);
+    var key = d.getTime();
+    if (key !== lastDay) {
+      groupedByDay.push({ day: key, msgs: [m] });
+      lastDay = key;
+    } else {
+      groupedByDay[groupedByDay.length-1].msgs.push(m);
+    }
+  });
+
+  return React.createElement("div", {
+    style: { minHeight: "100vh", background: CM.bg, display: "flex", flexDirection: "column" }
+  },
+    /* Chat header */
+    React.createElement("div", {
+      style: {
+        height: 64, padding: "0 14px",
+        display: "flex", alignItems: "center", gap: 10,
+        background: CM.bg,
+        borderBottom: "1px solid " + CM.line,
+        position: "sticky", top: 0, zIndex: 40,
+      }
+    },
+      React.createElement(CmIconBtn, { onClick: props.onBack }, Cmi.back),
+      React.createElement(CmAvatar, { name: title, size: 40 }),
+      React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+        React.createElement("div", {
+          style: { fontSize: 15, fontWeight: 700, color: CM.title, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }
+        }, title),
+        React.createElement("div", { style: { fontSize: 11, color: CM.sub, display: "flex", alignItems: "center", gap: 4 } },
+          React.createElement("span", { style: { color: CM.primary } }, "🔒"),
+          conv.type === "direct" && other ? cm("online") : (conv.memberIds || []).length + " membres"
+        )
+      ),
+      /* Icône Tasks — ajouter une tâche partagée avec l'autre */
+      React.createElement(CmIconBtn, { label: "tasks", onClick: function(){ setAddTaskOpen(true); } }, Cmi.tasks),
+      /* Un seul bouton appel → popover audio/video */
+      React.createElement("div", { style: { position: "relative" } },
+        React.createElement(CmIconBtn, { label: "call", onClick: function(){ setCallMenu(!callMenu); } }, Cmi.phone),
+        callMenu && React.createElement("div", {
+          style: {
+            position: "absolute", right: 0, top: 48, zIndex: 50,
+            background: CM.surface, border: "1px solid " + CM.line,
+            borderRadius: 14, padding: 6, boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+            minWidth: 200,
+          }
+        },
+          React.createElement("button", {
+            onClick: function(){ setCallMenu(false); cmToast(cm("callStarting") + " · " + cm("voiceCall"), "info"); },
+            style: { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", background: "transparent", border: "none", borderRadius: 10, color: CM.title, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }
+          },
+            React.createElement("span", { style: { color: CM.primary, display: "inline-flex" } }, Cmi.phone),
+            cm("voiceCall")
+          ),
+          React.createElement("button", {
+            onClick: function(){ setCallMenu(false); cmToast(cm("callStarting") + " · " + cm("videoCall"), "info"); },
+            style: { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px", background: "transparent", border: "none", borderRadius: 10, color: CM.title, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }
+          },
+            React.createElement("span", { style: { color: CM.primary, display: "inline-flex" } }, Cmi.video),
+            cm("videoCall")
+          )
+        )
+      )
+    ),
+
+    /* Pinned event invitation (if any) */
+    (function(){
+      var pinEv = cmEventForConversation ? cmEventForConversation(conv.id) : null;
+      if (!pinEv) return null;
+      var typ = (CM_EVENT_TYPES.find(function(t){ return t.id === pinEv.type; })) || { emoji: "🎉", label: "Événement" };
+      var dateStr = new Date(pinEv.dateMs).toLocaleDateString("fr-FR", { day:"numeric", month:"short", year:"numeric" });
+      return React.createElement("div", {
+        onClick: function(){ props.onOpenEvent && props.onOpenEvent(pinEv.id); },
+        style: {
+          margin: "10px 12px 0", padding: 12, borderRadius: 12,
+          background: CM.primarySoft, border: "1px solid " + CM.primary,
+          display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
+        }
+      },
+        React.createElement("span", { style: { fontSize: 18 } }, "📌"),
+        React.createElement("span", { style: { fontSize: 18 } }, typ.emoji),
+        React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+          React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: CM.primaryDark } }, pinEv.title),
+          React.createElement("div", { style: { fontSize: 11, color: CM.primaryDark, opacity: 0.85 } }, dateStr + " · " + pinEv.time + (pinEv.place ? " · " + pinEv.place : ""))
+        ),
+        React.createElement("span", { style: { color: CM.primaryDark } }, Cmi.chevR)
+      );
+    })(),
+
+    /* Messages scroll area */
+    React.createElement("div", {
+      ref: scrollRef,
+      style: {
+        flex: 1, overflowY: "auto",
+        background: CM.bg2,
+        padding: "14px 12px",
+      }
+    },
+      groupedByDay.map(function(group, gi) {
+        return React.createElement(React.Fragment, { key: gi },
+          React.createElement("div", {
+            style: { textAlign: "center", margin: "14px 0 10px" }
+          },
+            React.createElement("span", {
+              style: {
+                background: CM.surface, color: CM.sub,
+                fontSize: 11, fontWeight: 600,
+                padding: "5px 12px", borderRadius: 100,
+              }
+            }, cmFmtDayLabel(group.day))
+          ),
+          group.msgs.map(function(m) {
+            var mine = m.authorId === "me";
+            return React.createElement("div", {
+              key: m.id,
+              style: {
+                display: "flex", justifyContent: mine ? "flex-end" : "flex-start",
+                marginBottom: 4, padding: "0 4px",
+              }
+            },
+              React.createElement("div", {
+                style: {
+                  maxWidth: "78%",
+                  padding: "8px 12px", borderRadius: 16,
+                  background: mine ? CM.primary : CM.surface,
+                  color: mine ? CM.onPrimary : CM.body,
+                  borderBottomRightRadius: mine ? 4 : 16,
+                  borderBottomLeftRadius: mine ? 16 : 4,
+                  fontSize: 14, lineHeight: 1.35,
+                  boxShadow: CM.shadow,
+                  wordBreak: "break-word",
+                }
+              },
+                React.createElement("div", null, cmMsgText(m)),
+                React.createElement("div", {
+                  style: {
+                    fontSize: 10, color: mine ? "rgba(255,255,255,0.8)" : CM.muted,
+                    marginTop: 4, display: "flex", alignItems: "center", gap: 3, justifyContent: "flex-end",
+                  }
+                },
+                  cmFmtTime(m.at),
+                  mine && React.createElement("span", {
+                    style: { display: "inline-flex" }
+                  }, Cmi.checkDouble)
+                )
+              )
+            );
+          })
+        );
+      })
+    ),
+
+    /* Input */
+    React.createElement("div", {
+      style: {
+        padding: "10px 12px",
+        paddingBottom: "calc(10px + env(safe-area-inset-bottom))",
+        background: CM.bg,
+        borderTop: "1px solid " + CM.line,
+        display: "flex", alignItems: "center", gap: 8,
+      }
+    },
+      React.createElement(CmIconBtn, { label: "attach" }, Cmi.attach),
+      React.createElement("input", {
+        ref: inputRef,
+        value: input,
+        onChange: function(e){ setInput(e.target.value); },
+        onKeyDown: handleKeyDown,
+        placeholder: cm("typeMessage"),
+        style: {
+          flex: 1, padding: "12px 16px", borderRadius: 24,
+          background: CM.surface2,
+          border: "none", outline: "none",
+          fontFamily: "inherit", fontSize: 14, color: CM.body,
+        }
+      }),
+      input.trim() ?
+        React.createElement(CmIconBtn, {
+          onClick: send,
+          color: CM.onPrimary,
+          style: { background: CM.primary, boxShadow: CM.shadowGlow }
+        }, Cmi.send) :
+        React.createElement(CmIconBtn, { label: "voice" }, Cmi.mic)
+    ),
+
+    /* Sheet: ajouter tâche partagée */
+    addTaskOpen && React.createElement(CmSharedTaskSheet, {
+      onClose: function(){ setAddTaskOpen(false); },
+      contactName: title,
+      contactId: conv.type === "direct" ? conv.contactId : null,
+      convId: conv.id,
+    })
+  );
+}
+
+/* === Sheet: Tâche partagée avec le contact === */
+function CmSharedTaskSheet(props) {
+  var useState = React.useState;
+  var [title, setTitle] = useState("");
+  var [time, setTime] = useState("");
+  var [place, setPlace] = useState("");
+
+  function save() {
+    if (!title.trim()) return;
+    var task = {
+      id: "t_" + Date.now(),
+      title: title.trim(),
+      with: props.contactName,
+      time: time || "",
+      place: place || "",
+      createdAt: Date.now(),
+      category: "commun",
+      sharedWith: props.contactId,
+    };
+    cmAddTask(task);
+    cmToast("Tâche ajoutée : " + title, "success");
+    props.onClose();
+  }
+
+  return React.createElement(CmSheet, { onClose: props.onClose },
+    React.createElement("div", { style: { fontSize: 18, fontWeight: 800, color: CM.title, marginBottom: 16 } }, "Nouvelle tâche avec " + props.contactName),
+    React.createElement("input", {
+      value: title, onChange: function(e){ setTitle(e.target.value); },
+      placeholder: "Titre de la tâche",
+      autoFocus: true,
+      style: { width: "100%", padding: 12, borderRadius: 12, border: "1px solid " + CM.line, background: CM.surface, color: CM.title, fontSize: 15, marginBottom: 10, fontFamily: "inherit" }
+    }),
+    React.createElement("input", {
+      value: time, onChange: function(e){ setTime(e.target.value); },
+      placeholder: "Horaire (ex: 19h00 - 20h00)",
+      style: { width: "100%", padding: 12, borderRadius: 12, border: "1px solid " + CM.line, background: CM.surface, color: CM.title, fontSize: 15, marginBottom: 10, fontFamily: "inherit" }
+    }),
+    React.createElement("input", {
+      value: place, onChange: function(e){ setPlace(e.target.value); },
+      placeholder: "Lieu (optionnel)",
+      style: { width: "100%", padding: 12, borderRadius: 12, border: "1px solid " + CM.line, background: CM.surface, color: CM.title, fontSize: 15, marginBottom: 18, fontFamily: "inherit" }
+    }),
+    React.createElement(CmBtn, { variant: "primary", size: "lg", fullWidth: true, onClick: save }, "Créer la tâche partagée")
+  );
+}
+
+
+/* ══════ js/screens-todolist.js ══════ */
+/* Chrome Messenger — Todolist screen (month + week toggle)
+ * Fidelity: design 78 (month view) vs 79 (week view).
+ */
+
+function TodolistScreen(props) {
+  var useState = React.useState;
+  var [mode, setMode] = useState("month"); /* month | week */
+  var [selectedDate, setSelectedDate] = useState(function(){ var d = new Date(); d.setHours(0,0,0,0); return d.getTime(); });
+  var [addOpen, setAddOpen] = useState(false);
+  var [filter, setFilter] = useState("all");
+  var [themeOpen, setThemeOpen] = useState(false);
+
+  var selDate = new Date(selectedDate);
+  var tasks = cmTasksForDate(selectedDate);
+  var daysWithTasks = cmDaysWithTasks();
+
+  if (filter !== "all") tasks = tasks.filter(function(t){ return t.type === filter; });
+
+  return React.createElement("div", {
+    style: { minHeight: "100vh", background: CM.bg, paddingBottom: 100 }
+  },
+    React.createElement(CmHeader, {
+      onLogoTap: function(){ setThemeOpen(true); },
+      left: React.createElement(CmIconBtn, {
+        onClick: function(){ setMode(mode === "month" ? "week" : "month"); },
+        label: "toggle view",
+      }, mode === "month" ? Cmi.calendar : Cmi.info),
+      right: React.createElement("div", { style: { display: "flex", gap: 4 } },
+        React.createElement(CmIconBtn, { onClick: props.onOpenEvents, label: "events" }, Cmi.heart),
+        React.createElement(CmIconBtn, { onClick: props.onOpenQr, label: "qr scanner" }, Cmi.search)
+      ),
+    }),
+
+    /* Calendar view */
+    mode === "month" ?
+      React.createElement(MonthView, {
+        selectedDate: selectedDate,
+        daysWithTasks: daysWithTasks,
+        onSelect: function(ms){ setSelectedDate(ms); },
+      }) :
+      React.createElement(WeekStrip, {
+        selectedDate: selectedDate,
+        daysWithTasks: daysWithTasks,
+        onSelect: function(ms){ setSelectedDate(ms); },
+      }),
+
+    /* Today's tasks section */
+    React.createElement("div", {
+      style: { padding: "18px 22px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }
+    },
+      React.createElement("h3", {
+        style: { margin: 0, fontSize: 18, fontWeight: 800, color: CM.title }
+      }, cm("todayTasks")),
+      React.createElement("button", {
+        onClick: function(){ setAddOpen(true); },
+        style: {
+          background: CM.surface, border: "1px solid " + CM.line, color: CM.body,
+          padding: "8px 14px", borderRadius: 100, cursor: "pointer",
+          fontFamily: "inherit", fontWeight: 600, fontSize: 13,
+          display: "inline-flex", alignItems: "center", gap: 4,
+        }
+      }, cm("add"), Cmi.plus)
+    ),
+
+    /* Filters */
+    React.createElement("div", {
+      style: { display: "flex", gap: 8, padding: "12px 22px 4px", overflowX: "auto" }
+    },
+      [{id:"all",label:cm("filter_all")}, {id:"individual",label:cm("task_individual")}, {id:"commun",label:cm("task_commun")}, {id:"daily",label:cm("task_daily")}].map(function(f){
+        return React.createElement(CmPill, {
+          key: f.id, active: filter === f.id,
+          onClick: function(){ setFilter(f.id); },
+        }, f.label);
+      })
+    ),
+
+    /* Task rows */
+    React.createElement("div", { style: { padding: "10px 22px 0" } },
+      tasks.length === 0 && React.createElement("div", {
+        style: { textAlign: "center", padding: 40, color: CM.muted, fontSize: 14 }
+      },
+        React.createElement("div", { style: { fontSize: 34, marginBottom: 8 } }, "🌿"),
+        cm("noTasks")
+      ),
+      tasks.map(function(t) {
+        return React.createElement("div", {
+          key: t.id,
+          style: {
+            padding: 14, borderRadius: 14, marginBottom: 8,
+            background: CM.surface,
+            border: "1px solid " + CM.line,
+            display: "flex", alignItems: "center", gap: 12,
+          }
+        },
+          React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+            React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: CM.title, marginBottom: 3 } }, t.title),
+            React.createElement("div", { style: { fontSize: 12, color: CM.sub } },
+              t.with ? ("with " + t.with) : ""
+            )
+          ),
+          React.createElement("div", { style: { textAlign: "right", fontSize: 11, color: CM.sub } },
+            t.place && React.createElement("div", {
+              style: { display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", fontWeight: 600 }
+            }, Cmi.location, t.place),
+            React.createElement("div", {
+              style: { display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", marginTop: 2 }
+            }, Cmi.clock, cmFmtTime(t.startAt) + " - " + cmFmtTime(t.endAt))
+          )
+        );
+      })
+    ),
+
+    /* Add task sheet */
+    addOpen && React.createElement(AddTaskSheet, {
+      defaultDate: selectedDate,
+      onClose: function(){ setAddOpen(false); },
+      onSaved: function(){ setAddOpen(false); },
+    }),
+
+    /* Theme palette */
+    themeOpen && React.createElement(CmThemePalette, { onClose: function(){ setThemeOpen(false); }, onChange: props.onThemeChange })
+  );
+}
+
+/* Month view — design 78 */
+function MonthView(props) {
+  var useState = React.useState;
+  var [monthOffset, setMonthOffset] = useState(0);
+  var sel = new Date(props.selectedDate);
+  var first = new Date(sel.getFullYear(), sel.getMonth() + monthOffset, 1);
+  var year = first.getFullYear();
+  var monthIdx = first.getMonth();
+  var monthName = first.toLocaleDateString(cmLocale(), { month: "long" });
+
+  /* Monday-start week layout */
+  var firstDay = new Date(year, monthIdx, 1);
+  var firstWeekday = (firstDay.getDay() + 6) % 7; /* 0=Mon */
+  var daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+  var cells = [];
+  for (var i = 0; i < firstWeekday; i++) cells.push(null);
+  for (var d = 1; d <= daysInMonth; d++) cells.push(new Date(year, monthIdx, d).getTime());
+
+  var today = new Date(); today.setHours(0,0,0,0);
+  var todayMs = today.getTime();
+
+  return React.createElement("div", { style: { padding: "0 14px" } },
+    React.createElement("div", {
+      style: { padding: "8px 22px", margin: "10px 0", borderRadius: 16, background: CM.surface, border: "1px solid " + CM.line }
+    },
+      /* Month header */
+      React.createElement("div", {
+        style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0 14px" }
+      },
+        React.createElement("button", { onClick: function(){ setMonthOffset(monthOffset - 1); }, style: navBtnStyle() }, Cmi.chevL),
+        React.createElement("h3", {
+          style: { margin: 0, fontSize: 16, fontWeight: 800, color: CM.title, textTransform: "capitalize" }
+        }, monthName + " " + year),
+        React.createElement("button", { onClick: function(){ setMonthOffset(monthOffset + 1); }, style: navBtnStyle() }, Cmi.chevR)
+      ),
+      /* Weekday header */
+      React.createElement("div", {
+        style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, paddingBottom: 6 }
+      },
+        ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(function(w){
+          return React.createElement("div", {
+            key: w,
+            style: { fontSize: 11, fontWeight: 700, color: w === "Sun" ? CM.primary : CM.sub, textAlign: "center" }
+          }, w);
+        })
+      ),
+      /* Days grid */
+      React.createElement("div", {
+        style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }
+      },
+        cells.map(function(ms, i) {
+          if (ms === null) return React.createElement("div", { key: "e"+i, style: { height: 38 } });
+          var isSel = ms === props.selectedDate;
+          var isToday = ms === todayMs;
+          var hasTask = !!props.daysWithTasks[ms];
+          var isSunday = (i % 7) === 6;
+          var dayNum = new Date(ms).getDate();
+          return React.createElement("button", {
+            key: ms,
+            onClick: function(){ props.onSelect(ms); },
+            style: {
+              height: 38, border: "none", background: "transparent",
+              fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+              color: isSel ? CM.primaryDark : (isToday ? CM.title : (isSunday ? CM.primary : CM.body)),
+              cursor: "pointer", padding: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              position: "relative",
+            }
+          },
+            React.createElement("div", {
+              style: {
+                width: 32, height: 32, borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: isSel ? CM.primarySoft : (isToday && !isSel ? CM.surface2 : (hasTask ? CM.primarySoft : "transparent")),
+                border: isSel ? ("1.5px solid " + CM.primary) : "none",
+              }
+            }, dayNum)
+          );
+        })
+      )
+    )
+  );
+}
+
+/* Week strip — design 79 */
+function WeekStrip(props) {
+  var sel = new Date(props.selectedDate);
+  var weekStart = new Date(sel); weekStart.setDate(sel.getDate() - ((sel.getDay() + 6) % 7));
+  weekStart.setHours(0,0,0,0);
+  var days = [];
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+    days.push(d);
+  }
+  var monthName = sel.toLocaleDateString(cmLocale(), { month: "long", year: "numeric" });
+
+  return React.createElement("div", { style: { padding: "0 14px" } },
+    React.createElement("div", {
+      style: { padding: "14px 14px", margin: "10px 0" }
+    },
+      React.createElement("div", {
+        style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }
+      },
+        React.createElement("button", {
+          onClick: function(){ var d = new Date(props.selectedDate); d.setDate(d.getDate()-7); props.onSelect(d.getTime()); },
+          style: navBtnStyle(),
+        }, Cmi.chevL),
+        React.createElement("h3", {
+          style: { margin: 0, fontSize: 16, fontWeight: 800, color: CM.title, textTransform: "capitalize" }
+        }, monthName),
+        React.createElement("button", {
+          onClick: function(){ var d = new Date(props.selectedDate); d.setDate(d.getDate()+7); props.onSelect(d.getTime()); },
+          style: navBtnStyle(),
+        }, Cmi.chevR)
+      ),
+      React.createElement("div", {
+        style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }
+      },
+        days.map(function(d) {
+          var ms = d.getTime();
+          var isSel = ms === props.selectedDate;
+          return React.createElement("button", {
+            key: ms,
+            onClick: function(){ props.onSelect(ms); },
+            style: {
+              background: isSel ? CM.surface2 : "transparent",
+              border: "none", cursor: "pointer",
+              padding: "10px 4px", borderRadius: 12,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+              fontFamily: "inherit",
+            }
+          },
+            React.createElement("div", {
+              style: { fontSize: 12, fontWeight: 600, color: isSel ? CM.title : CM.sub, textTransform: "capitalize" }
+            }, cmShortDay(d)),
+            React.createElement("div", {
+              style: { fontSize: 14, fontWeight: 800, color: isSel ? CM.title : CM.body }
+            }, d.getDate())
+          );
+        })
+      )
+    )
+  );
+}
+
+function navBtnStyle() {
+  return {
+    width: 32, height: 32, borderRadius: "50%",
+    background: CM.surface2, border: "none", color: CM.body,
+    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+    fontFamily: "inherit",
+  };
+}
+
+/* Add task sheet */
+function AddTaskSheet(props) {
+  var useState = React.useState;
+  var [title, setTitle] = useState("");
+  var [withWho, setWithWho] = useState("");
+  var [place, setPlace] = useState("");
+  var [type, setType] = useState("individual");
+  var [time, setTime] = useState("10:00");
+  var [duration, setDuration] = useState(30);
+
+  function save() {
+    if (!title.trim()) { cmToast("Titre requis", "error"); return; }
+    var base = new Date(props.defaultDate);
+    var [h,m] = time.split(":").map(Number);
+    base.setHours(h || 10, m || 0, 0, 0);
+    cmAddTask({
+      title: title.trim(),
+      with: withWho.trim(),
+      place: place.trim(),
+      type: type,
+      startAt: base.getTime(),
+      endAt: base.getTime() + (duration || 30) * 60000,
+      done: false,
+    });
+    props.onSaved();
+  }
+
+  return React.createElement(CmSheet, { onClose: props.onClose },
+    React.createElement("h3", {
+      style: { margin: "0 0 18px", fontSize: 18, fontWeight: 800, color: CM.title }
+    }, cm("addTask")),
+    React.createElement("label", { style: labelStyle() }, cm("taskName")),
+    React.createElement("input", {
+      value: title, onChange: function(e){ setTitle(e.target.value); },
+      placeholder: "Homework, RDV...", style: sheetInputStyle(), autoFocus: true,
+    }),
+    React.createElement("label", { style: labelStyle() }, cm("taskWith")),
+    React.createElement("input", {
+      value: withWho, onChange: function(e){ setWithWho(e.target.value); },
+      placeholder: "Fred Larson", style: sheetInputStyle(),
+    }),
+    React.createElement("label", { style: labelStyle() }, cm("taskLocation")),
+    React.createElement("input", {
+      value: place, onChange: function(e){ setPlace(e.target.value); },
+      placeholder: "Bafoussam", style: sheetInputStyle(),
+    }),
+    React.createElement("div", { style: { display: "flex", gap: 10 } },
+      React.createElement("div", { style: { flex: 1 } },
+        React.createElement("label", { style: labelStyle() }, cm("taskStart")),
+        React.createElement("input", {
+          type: "time", value: time, onChange: function(e){ setTime(e.target.value); },
+          style: sheetInputStyle(),
+        })
+      ),
+      React.createElement("div", { style: { flex: 1 } },
+        React.createElement("label", { style: labelStyle() }, "Duree (min)"),
+        React.createElement("input", {
+          type: "number", value: duration, onChange: function(e){ setDuration(parseInt(e.target.value)||30); },
+          style: sheetInputStyle(),
+        })
+      )
+    ),
+    React.createElement("label", { style: labelStyle() }, cm("taskType")),
+    React.createElement("div", { style: { display: "flex", gap: 8 } },
+      ["individual","commun","daily"].map(function(t){
+        return React.createElement(CmPill, {
+          key: t, active: type === t, onClick: function(){ setType(t); },
+        }, cm("task_" + t));
+      })
+    ),
+    React.createElement("div", { style: { display: "flex", gap: 10, marginTop: 22 } },
+      React.createElement(CmBtn, { variant: "ghost", fullWidth: true, onClick: props.onClose }, cm("cancel")),
+      React.createElement(CmBtn, { variant: "primary", fullWidth: true, onClick: save }, cm("save"))
+    )
+  );
+}
+
+function labelStyle() {
+  return { display: "block", fontSize: 11, fontWeight: 700, color: CM.sub, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 14, marginBottom: 6 };
+}
+function sheetInputStyle() {
+  return {
+    width: "100%", padding: "12px 14px", borderRadius: 12,
+    border: "1px solid " + CM.line, background: CM.surface2,
+    fontFamily: "inherit", fontSize: 14, color: CM.body,
+    outline: "none", boxSizing: "border-box",
+  };
+}
+
+
+/* ══════ js/screens-games.js ══════ */
+/* Chrome Messenger — Games screen (Solo + Social, 2 horizontal slides) */
+
+function GamesScreen(props) {
+  var useState = React.useState;
+  var [themeOpen, setThemeOpen] = useState(false);
+
+  return React.createElement("div", {
+    style: { minHeight: "100vh", background: CM.bg, paddingBottom: 100 }
+  },
+    React.createElement(CmHeader, {
+      onLogoTap: function(){ setThemeOpen(true); },
+      left: React.createElement(CmIconBtn, { onClick: props.onOpenPremium, color: CM.body }, Cmi.gem),
+      right: React.createElement(CmIconBtn, { onClick: props.onOpenMenu }, Cmi.menu),
+    }),
+
+    /* Solo games section */
+    React.createElement("div", {
+      style: { padding: "6px 22px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }
+    },
+      React.createElement("div", null,
+        React.createElement("h2", {
+          style: { margin: 0, fontSize: 20, fontWeight: 800, color: CM.title }
+        }, cm("gamesSolo")),
+        React.createElement("p", {
+          style: { margin: "2px 0 0", fontSize: 12, color: CM.sub }
+        }, cm("gamesSoloDesc"))
+      ),
+      CM_SEED_GAMES.solo.length > 4 && React.createElement("button", {
+        onClick: function(){ props.onSeeAll("solo"); },
+        style: { background: "transparent", border: "none", color: CM.primary, fontFamily: "inherit", fontWeight: 700, fontSize: 13, cursor: "pointer" }
+      }, cm("seeAll"))
+    ),
+    React.createElement("div", {
+      style: { display: "flex", gap: 12, overflowX: "auto", padding: "4px 22px 14px" }
+    },
+      CM_SEED_GAMES.solo.map(function(g) {
+        return React.createElement(GameCard, { key: g.id, game: g, onPlay: function(){ props.onPlayGame(g); } });
+      })
+    ),
+
+    /* Social games section */
+    React.createElement("div", {
+      style: { padding: "10px 22px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }
+    },
+      React.createElement("div", null,
+        React.createElement("h2", {
+          style: { margin: 0, fontSize: 20, fontWeight: 800, color: CM.title }
+        }, cm("gamesSocial")),
+        React.createElement("p", {
+          style: { margin: "2px 0 0", fontSize: 12, color: CM.sub }
+        }, cm("gamesSocialDesc"))
+      ),
+      CM_SEED_GAMES.social.length > 4 && React.createElement("button", {
+        onClick: function(){ props.onSeeAll("social"); },
+        style: { background: "transparent", border: "none", color: CM.primary, fontFamily: "inherit", fontWeight: 700, fontSize: 13, cursor: "pointer" }
+      }, cm("seeAll"))
+    ),
+    React.createElement("div", {
+      style: { display: "flex", gap: 12, overflowX: "auto", padding: "4px 22px 14px" }
+    },
+      CM_SEED_GAMES.social.map(function(g) {
+        return React.createElement(GameCard, { key: g.id, game: g, onPlay: function(){ props.onPlayGame(g); }, social: true });
+      })
+    ),
+
+    /* Premium banner */
+    React.createElement("div", {
+      onClick: props.onOpenPremium,
+      style: {
+        margin: "10px 22px 0", padding: 16, borderRadius: 16,
+        background: "linear-gradient(135deg, " + CM.primary + ", " + CM.primaryDark + ")",
+        color: CM.onPrimary,
+        display: "flex", alignItems: "center", gap: 14, cursor: "pointer",
+        boxShadow: CM.shadowGlow,
+      }
+    },
+      React.createElement("div", { style: { fontSize: 34 } }, "💎"),
+      React.createElement("div", { style: { flex: 1 } },
+        React.createElement("div", { style: { fontSize: 14, fontWeight: 800 } }, "Game Pass"),
+        React.createElement("div", { style: { fontSize: 12, opacity: 0.92, marginTop: 2 } }, "Debloque tous les jeux sociaux")
+      ),
+      React.createElement("span", null, Cmi.chevR)
+    ),
+
+    themeOpen && React.createElement(CmThemePalette, { onClose: function(){ setThemeOpen(false); }, onChange: props.onThemeChange })
+  );
+}
+
+function GameCard(props) {
+  var g = props.game;
+  var locked = props.social && g.kind === "social"; /* mock premium lock */
+  return React.createElement("button", {
+    onClick: props.onPlay,
+    style: {
+      flexShrink: 0, width: 150, minHeight: 170,
+      background: CM.surface,
+      border: "1px solid " + CM.line,
+      borderRadius: 18, padding: 14,
+      cursor: "pointer", fontFamily: "inherit",
+      display: "flex", flexDirection: "column", gap: 8,
+      position: "relative", overflow: "hidden",
+    }
+  },
+    React.createElement("div", {
+      style: {
+        width: 54, height: 54, borderRadius: 14,
+        background: g.color + "22", color: g.color,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 28,
+      }
+    }, g.emoji),
+    React.createElement("div", { style: { flex: 1 } },
+      React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: CM.title, textAlign: "left" } }, g.name),
+      React.createElement("div", { style: { fontSize: 11, color: CM.sub, textAlign: "left", marginTop: 3, lineHeight: 1.4 } }, g.desc)
+    ),
+    locked ? React.createElement("div", {
+      style: { fontSize: 11, fontWeight: 700, color: CM.primary, display: "flex", alignItems: "center", gap: 4 }
+    }, "💎 Premium") :
+    React.createElement("div", {
+      style: { fontSize: 11, fontWeight: 700, color: g.color, display: "flex", alignItems: "center", gap: 4 }
+    },
+      React.createElement("span", null, g.kind === "social" ? cm("invite") : cm("play")),
+      React.createElement("span", null, "→")
+    )
+  );
+}
+
+
+/* ══════ js/screens-notifs.js ══════ */
+/* Chrome Messenger — Notifications screen (based on design 84, 93) */
+
+function NotifsScreen(props) {
+  var useState = React.useState;
+  var [filter, setFilter] = useState("all");
+  var [themeOpen, setThemeOpen] = useState(false);
+
+  var notifs = cmGetNotifs();
+  if (filter !== "all") notifs = notifs.filter(function(n){ return n.kind === filter; });
+  /* Split by today / earlier */
+  var today = new Date(); today.setHours(0,0,0,0);
+  var tod = notifs.filter(function(n){ return n.at >= today.getTime(); });
+  var earlier = notifs.filter(function(n){ return n.at < today.getTime(); });
+
+  return React.createElement("div", {
+    style: { minHeight: "100vh", background: CM.bg, paddingBottom: 100 }
+  },
+    React.createElement(CmHeader, {
+      onLogoTap: function(){ setThemeOpen(true); },
+      left: React.createElement(CmIconBtn, {
+        onClick: function(){
+          if (confirm("Tout effacer ?")) { cmSetNotifs([]); cmToast("Efface", "info"); props.onChanged && props.onChanged(); }
+        },
+      }, Cmi.trash),
+      right: React.createElement(CmIconBtn, { onClick: props.onOpenSettings }, Cmi.settings),
+    }),
+
+    React.createElement("h2", {
+      style: { margin: "4px 22px 12px", fontSize: 22, fontWeight: 800, color: CM.title }
+    }, cm("notifications")),
+
+    /* Filters */
+    React.createElement("div", {
+      style: { display: "flex", gap: 8, padding: "0 22px 14px", overflowX: "auto" }
+    },
+      ["all","call","tasks","events","matchs"].map(function(f){
+        return React.createElement(CmPill, {
+          key: f, active: filter === f,
+          onClick: function(){ setFilter(f); },
+        }, cm("notif_" + f));
+      })
+    ),
+
+    /* Today */
+    tod.length > 0 && React.createElement("div", null,
+      React.createElement("h3", {
+        style: { margin: "6px 22px 10px", fontSize: 16, fontWeight: 800, color: CM.title }
+      }, cm("notifToday")),
+      React.createElement("div", { style: { padding: "0 22px" } },
+        tod.map(function(n){ return notifRow(n); })
+      )
+    ),
+
+    /* Earlier */
+    earlier.length > 0 && React.createElement("div", null,
+      React.createElement("h3", {
+        style: { margin: "18px 22px 10px", fontSize: 16, fontWeight: 800, color: CM.title }
+      }, cm("notifEarlier")),
+      React.createElement("div", { style: { padding: "0 22px" } },
+        earlier.map(function(n){ return notifRow(n); })
+      )
+    ),
+
+    /* Empty */
+    notifs.length === 0 && React.createElement("div", {
+      style: { textAlign: "center", padding: 60, color: CM.muted }
+    },
+      React.createElement("div", { style: { fontSize: 40, marginBottom: 10 } }, "🔕"),
+      React.createElement("div", { style: { fontSize: 14, fontWeight: 600 } }, cm("noNotifs"))
+    ),
+
+    themeOpen && React.createElement(CmThemePalette, { onClose: function(){ setThemeOpen(false); }, onChange: props.onThemeChange })
+  );
+}
+
+function notifRow(n) {
+  return React.createElement("div", {
+    key: n.id,
+    style: {
+      padding: 14, borderRadius: 14, marginBottom: 8,
+      background: CM.surface, border: "1px solid " + CM.line,
+      display: "flex", alignItems: "center", gap: 12,
+    }
+  },
+    React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+      React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: CM.title, marginBottom: 3 } }, n.title),
+      n.subtitle && React.createElement("div", { style: { fontSize: 12, color: CM.sub } }, n.subtitle)
+    ),
+    React.createElement("div", { style: { textAlign: "right", fontSize: 11, color: CM.sub } },
+      n.place && React.createElement("div", {
+        style: { display: "flex", alignItems: "center", gap: 3, justifyContent: "flex-end", fontWeight: 600 }
+      }, Cmi.location, n.place),
+      n.time && React.createElement("div", {
+        style: { display: "flex", alignItems: "center", gap: 3, justifyContent: "flex-end", marginTop: 2 }
+      }, Cmi.clock, n.time)
+    )
+  );
+}
+
+
+/* ══════ js/screens-story.js ══════ */
+/* Chrome Messenger — Story viewer + creator */
+
+function StoryViewer(props) {
+  var useState = React.useState;
+  var useEffect = React.useEffect;
+  var [progress, setProgress] = useState(0);
+  var stories = cmGetStories();
+  var [idx, setIdx] = useState(stories.findIndex(function(s){ return s.id === props.storyId; }));
+  var contacts = cmGetContacts();
+
+  useEffect(function(){
+    /* Auto-advance every 5s */
+    var startedAt = Date.now();
+    var rafId;
+    function tick() {
+      var elapsed = Date.now() - startedAt;
+      var p = Math.min(1, elapsed / 5000);
+      setProgress(p);
+      if (p >= 1) {
+        if (idx < stories.length - 1) { setIdx(idx + 1); }
+        else { props.onClose(); }
+      } else {
+        rafId = requestAnimationFrame(tick);
+      }
+    }
+    rafId = requestAnimationFrame(tick);
+    /* Mark as viewed */
+    var cur = stories[idx];
+    if (cur) cmMarkStoryViewed(cur.id);
+    return function(){ cancelAnimationFrame(rafId); };
+  }, [idx]);
+
+  var story = stories[idx];
+  if (!story) return null;
+  var owner = cmContactById(contacts, story.ownerId);
+
+  return React.createElement("div", {
+    onClick: function(){ if (idx < stories.length - 1) setIdx(idx + 1); else props.onClose(); },
+    style: {
+      position: "fixed", inset: 0, zIndex: 1000,
+      background: story.bg || CM.primarySoft,
+      display: "flex", flexDirection: "column",
+      color: "white",
+    }
+  },
+    /* Progress bars */
+    React.createElement("div", {
+      style: { display: "flex", gap: 3, padding: "10px 14px" }
+    },
+      stories.map(function(_, i) {
+        return React.createElement("div", {
+          key: i,
+          style: { flex: 1, height: 3, borderRadius: 3, background: "rgba(255,255,255,0.35)", overflow: "hidden" }
+        },
+          React.createElement("div", {
+            style: {
+              width: (i < idx ? 100 : i > idx ? 0 : progress*100) + "%",
+              height: "100%", background: "white", transition: "width 0.1s linear",
+            }
+          })
+        );
+      })
+    ),
+    /* Owner header */
+    React.createElement("div", {
+      style: { padding: "6px 14px", display: "flex", alignItems: "center", gap: 10 }
+    },
+      owner && React.createElement(CmAvatar, { name: owner.name, size: 36 }),
+      React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+        React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: "#1A1F2A" } }, owner ? owner.name : "Unknown"),
+        React.createElement("div", { style: { fontSize: 11, color: "rgba(0,0,0,0.55)" } }, cmFmtTime(story.createdAt))
+      ),
+      React.createElement("button", {
+        onClick: function(e){ e.stopPropagation(); props.onClose(); },
+        style: { background: "rgba(0,0,0,0.15)", border: "none", color: "#1A1F2A", width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }
+      }, Cmi.close)
+    ),
+    /* Content */
+    React.createElement("div", {
+      style: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 30 }
+    },
+      React.createElement("div", {
+        style: { fontSize: 28, fontWeight: 800, color: "#1A1F2A", textAlign: "center", lineHeight: 1.3, textShadow: "0 2px 10px rgba(255,255,255,0.4)" }
+      }, story.text || "")
+    ),
+    /* Reply */
+    React.createElement("div", {
+      onClick: function(e){ e.stopPropagation(); },
+      style: { padding: "14px 14px calc(14px + env(safe-area-inset-bottom))", background: "rgba(0,0,0,0.15)" }
+    },
+      React.createElement("input", {
+        placeholder: cm("replyToStory"),
+        style: {
+          width: "100%", padding: "12px 16px", borderRadius: 24,
+          border: "none", outline: "none",
+          background: "rgba(255,255,255,0.9)", color: "#1A1F2A",
+          fontFamily: "inherit", fontSize: 14,
+          boxSizing: "border-box",
+        }
+      })
+    )
+  );
+}
+
+/* Story creator — pick a color + text */
+function StoryCreator(props) {
+  var useState = React.useState;
+  var [text, setText] = useState("");
+  var [bg, setBg] = useState("#C2F2E0");
+  var bgOptions = [
+    "#C2F2E0","#C8D9FF","#FFD4BB","#FFC6D3","#E1C8FB","#EAD4F5","#FFE8A0","#F1F3F6"
+  ];
+
+  function publish() {
+    cmAddStory({ ownerId: "me", kind: "colors", bg: bg, text: text.trim(), viewed: false });
+    cmToast("Status publie !", "info");
+    props.onDone();
+  }
+
+  return React.createElement("div", {
+    style: {
+      position: "fixed", inset: 0, zIndex: 900,
+      background: bg, display: "flex", flexDirection: "column",
+    }
+  },
+    /* Top bar */
+    React.createElement("div", {
+      style: { padding: "14px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }
+    },
+      React.createElement("button", {
+        onClick: props.onClose,
+        style: { background: "rgba(0,0,0,0.1)", border: "none", color: "#1A1F2A", width: 38, height: 38, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }
+      }, Cmi.close),
+      React.createElement(CmBtn, { variant: "primary", size: "md", onClick: publish, disabled: !text.trim() }, "Publier")
+    ),
+    React.createElement("div", {
+      style: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 30 }
+    },
+      React.createElement("textarea", {
+        value: text,
+        onChange: function(e){ setText(e.target.value); },
+        placeholder: "Tapote ici...",
+        maxLength: 200,
+        style: {
+          width: "100%", minHeight: 120,
+          background: "transparent", border: "none", outline: "none",
+          textAlign: "center", color: "#1A1F2A",
+          fontSize: 28, fontWeight: 800,
+          fontFamily: "inherit", resize: "none",
+        },
+        autoFocus: true,
+      })
+    ),
+    /* Color picker */
+    React.createElement("div", {
+      style: { padding: "14px 14px calc(14px + env(safe-area-inset-bottom))", display: "flex", gap: 10, overflowX: "auto" }
+    },
+      bgOptions.map(function(c) {
+        return React.createElement("button", {
+          key: c,
+          onClick: function(){ setBg(c); },
+          style: {
+            width: 40, height: 40, borderRadius: "50%",
+            background: c, border: "none", cursor: "pointer", flexShrink: 0,
+            boxShadow: bg === c ? "0 0 0 3px rgba(0,0,0,0.4)" : "0 2px 6px rgba(0,0,0,0.1)",
+          }
+        });
+      })
+    )
+  );
+}
+
+
+/* ══════ js/screens-premium.js ══════ */
+/* Chrome Messenger — Premium / Subscriptions screen
+ * Accessed via the diamond icon in the header.
+ * Unlocks: extra themes, game pass (premium games), extra storage, etc.
+ */
+
+const CM_PLANS = [
+  { id: "free",    name: "Free",    price: 0,    period: "",      highlight: false, features: [
+      "3 thèmes de base",
+      "Chats illimités",
+      "Statuts illimités",
+      "Sauvegarde cloud",
+      "Quelques jeux solo",
+  ]},
+  { id: "plus",    name: "Plus",    price: 2.99, period: "/mois", highlight: true,  features: [
+      "Les 8 thèmes + mode sombre",
+      "Statuts illimités + Sauvegarde cloud",
+      "1 jeu solo premium + 1 jeu social",
+      "Notifications pour les tâches",
+  ]},
+  { id: "pro",     name: "Pro",     price: 6.99, period: "/mois", highlight: false, features: [
+      "Tout dans Plus",
+      "Tous les jeux solo + sociaux",
+      "Palette couleur personnalisée",
+      "Stickers caméléon premium",
+      "Notifications tâches + rappels",
+      "Gestion d'événements (invitation, QR, rappels J-1 & J)",
+  ]},
+  { id: "yearly",  name: "Yearly",  price: 59.99,period: "/an",   highlight: false, features: [
+      "Tout dans Pro",
+      "2 mois offerts",
+      "Badge Chrome Pro",
+      "Accès anticipé aux nouvelles features",
+  ]},
+];
+
+function PremiumScreen(props) {
+  var useState = React.useState;
+  var [selected, setSelected] = useState("plus");
+
+  return React.createElement("div", {
+    style: { minHeight: "100vh", background: CM.bg, paddingBottom: 120 }
+  },
+    /* Header */
+    React.createElement(CmHeader, {
+      left: React.createElement(CmIconBtn, { onClick: props.onBack }, Cmi.back),
+      onLogoTap: props.onThemeOpen,
+    }),
+
+    /* Hero */
+    React.createElement("div", {
+      style: {
+        margin: "8px 22px 22px",
+        padding: "26px 22px",
+        borderRadius: 20,
+        background: "linear-gradient(135deg, " + CM.primary + ", " + CM.primaryDark + ")",
+        color: CM.onPrimary,
+        textAlign: "center",
+        boxShadow: CM.shadowGlow,
+      }
+    },
+      React.createElement("div", { style: { fontSize: 40, marginBottom: 8 } }, "💎"),
+      React.createElement("h2", {
+        style: { margin: 0, fontSize: 24, fontWeight: 800, letterSpacing: "-0.3px" }
+      }, "Chrome Premium"),
+      React.createElement("p", {
+        style: { margin: "8px 0 0", fontSize: 13, opacity: 0.92 }
+      }, "Debloque les themes, les jeux et bien plus.")
+    ),
+
+    /* Plans */
+    React.createElement("div", { style: { padding: "0 22px", display: "flex", flexDirection: "column", gap: 12 } },
+      CM_PLANS.map(function(plan) {
+        var active = selected === plan.id;
+        return React.createElement("div", {
+          key: plan.id,
+          onClick: function(){ setSelected(plan.id); },
+          style: {
+            position: "relative",
+            padding: 18, borderRadius: 16, cursor: "pointer",
+            background: active ? CM.primaryFaint : CM.surface,
+            border: "2px solid " + (active ? CM.primary : CM.line),
+            transition: "all 0.15s",
+          }
+        },
+          plan.highlight && React.createElement("div", {
+            style: {
+              position: "absolute", top: -10, right: 16,
+              padding: "3px 10px", borderRadius: 100,
+              background: CM.primary, color: CM.onPrimary,
+              fontSize: 10, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase",
+            }
+          }, "Populaire"),
+          React.createElement("div", {
+            style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }
+          },
+            React.createElement("div", null,
+              React.createElement("div", { style: { fontSize: 16, fontWeight: 800, color: CM.title } }, plan.name),
+              plan.price > 0 && React.createElement("div", { style: { marginTop: 4 } },
+                React.createElement("span", { style: { fontSize: 22, fontWeight: 800, color: CM.title } }, plan.price.toFixed(2) + " €"),
+                React.createElement("span", { style: { fontSize: 13, color: CM.sub, marginLeft: 4 } }, plan.period)
+              ),
+              plan.price === 0 && React.createElement("div", { style: { fontSize: 14, color: CM.sub, marginTop: 4 } }, "Toujours gratuit")
+            ),
+            active && React.createElement("div", {
+              style: {
+                width: 30, height: 30, borderRadius: "50%",
+                background: CM.primary, color: CM.onPrimary,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }
+            }, Cmi.check)
+          ),
+          React.createElement("ul", { style: { margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 } },
+            plan.features.map(function(f, i) {
+              return React.createElement("li", {
+                key: i,
+                style: { display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: CM.body }
+              },
+                React.createElement("span", { style: { color: CM.primary, display: "inline-flex", marginTop: 2 } }, Cmi.check2),
+                f
+              );
+            })
+          )
+        );
+      })
+    ),
+
+    /* Stickers caméléon premium */
+    React.createElement("div", {
+      style: {
+        margin: "22px 22px 0", padding: 18, borderRadius: 16,
+        background: CM.surface2, display: "flex", alignItems: "center", gap: 14,
+      }
+    },
+      React.createElement("div", { style: { display: "flex", gap: 4 } },
+        React.createElement(ChameleonLogo, { size: 40, color: "#30D79C", showBg: false }),
+        React.createElement(ChameleonLogo, { size: 40, color: "#FF8A4C", showBg: false }),
+        React.createElement(ChameleonLogo, { size: 40, color: "#A855F7", showBg: false })
+      ),
+      React.createElement("div", { style: { flex: 1 } },
+        React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: CM.title } }, "Stickers caméléon"),
+        React.createElement("div", { style: { fontSize: 12, color: CM.sub, marginTop: 2 } }, "Un pack exclusif à l'effigie du caméléon dans toutes les couleurs.")
+      )
+    ),
+
+    /* CTA */
+    React.createElement("div", {
+      style: {
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        maxWidth: 480, margin: "0 auto",
+        padding: "16px 22px", background: CM.bg,
+        borderTop: "1px solid " + CM.line,
+        paddingBottom: "calc(16px + env(safe-area-inset-bottom))",
+      }
+    },
+      React.createElement(CmBtn, {
+        variant: "primary", size: "lg", fullWidth: true,
+        onClick: function(){ cmToast("Paiement simule — " + CM_PLANS.find(function(p){return p.id===selected;}).name + " active !", "info"); },
+      }, selected === "free" ? "Continuer gratuitement" : "💎 Passer a " + CM_PLANS.find(function(p){return p.id===selected;}).name)
+    )
+  );
+}
+
+
+/* ══════ js/screens-events.js ══════ */
+/* Chrome Messenger — Événements (Pro)
+ * Create/send invitations to contact categories with QR code + date/time + location + photo.
+ * Invitations are pinned at the top of each recipient's conversation until event date.
+ * Reminders fire J-1 and J-day (local notification stub).
+ */
+
+const CM_EVENT_TYPES = [
+  { id: "anniversaire", label: "Anniversaire", emoji: "🎂" },
+  { id: "deuil",        label: "Deuil",        emoji: "🕊️" },
+  { id: "mariage",      label: "Mariage",      emoji: "💍" },
+  { id: "reunion",      label: "Réunion",      emoji: "👥" },
+  { id: "fete",         label: "Fête",         emoji: "🎉" },
+  { id: "autre",        label: "Autre",        emoji: "📌" },
+];
+
+/* === Storage === */
+function cmGetEvents() { return cmLoad("cm_events", []); }
+function cmSetEvents(list) { cmSave("cm_events", list); }
+function cmAddEvent(ev) {
+  var list = cmGetEvents();
+  ev.id = ev.id || ("ev_" + Date.now() + "_" + Math.random().toString(36).substring(2,6));
+  list.push(ev);
+  cmSetEvents(list);
+  return ev.id;
+}
+function cmRemoveEvent(id) {
+  cmSetEvents(cmGetEvents().filter(function(e){ return e.id !== id; }));
+}
+/* Event pinned to a conversation = the recipient sees it at top */
+function cmEventForConversation(convId) {
+  var contacts = cmGetContacts();
+  var conv = cmFindConversation(convId);
+  if (!conv || conv.type !== "direct") return null;
+  var contactId = conv.contactId;
+  var now = Date.now();
+  return cmGetEvents().find(function(ev) {
+    if (!ev.recipients) return false;
+    if (ev.recipients.indexOf(contactId) === -1 && ev.recipients.indexOf("*") === -1) return false;
+    /* Show invitation up to event day end */
+    return ev.dateMs >= now - 24*3600*1000;
+  }) || null;
+}
+
+/* === QR Code generator — simple SVG pattern deterministic from seed === */
+function cmGenerateQrSvg(seed, size) {
+  size = size || 140;
+  var grid = 21; /* 21x21 pseudo-QR */
+  var cell = size / grid;
+  var hash = 0;
+  for (var i = 0; i < seed.length; i++) hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+  var rects = [];
+  for (var y = 0; y < grid; y++) {
+    for (var x = 0; x < grid; x++) {
+      /* Locator corners (finder patterns) like real QR */
+      var corner =
+        (x < 7 && y < 7) || (x >= grid-7 && y < 7) || (x < 7 && y >= grid-7);
+      if (corner) {
+        var inOuter = (x === 0 || x === 6 || y === 0 || y === 6) ||
+                      (x === grid-7 || x === grid-1 || y === 0 || y === 6) ||
+                      (x === 0 || x === 6 || y === grid-7 || y === grid-1);
+        var inInner = (x >= 2 && x <= 4 && y >= 2 && y <= 4) ||
+                      (x >= grid-5 && x <= grid-3 && y >= 2 && y <= 4) ||
+                      (x >= 2 && x <= 4 && y >= grid-5 && y <= grid-3);
+        if (inOuter || inInner) rects.push({x:x,y:y});
+        continue;
+      }
+      /* Deterministic noise */
+      var bit = (Math.abs(hash ^ (x * 73856093) ^ (y * 19349663)) % 100) < 48;
+      if (bit) rects.push({x:x,y:y});
+    }
+  }
+  return React.createElement("svg", {
+    width: size, height: size, viewBox: "0 0 " + size + " " + size,
+    style: { display: "block", background: "white", borderRadius: 8 }
+  },
+    rects.map(function(r, i) {
+      return React.createElement("rect", {
+        key: i, x: r.x * cell, y: r.y * cell, width: cell, height: cell, fill: "#111"
+      });
+    })
+  );
+}
+
+/* === Events List Screen === */
+function EventsScreen(props) {
+  var events = cmGetEvents().sort(function(a,b){ return a.dateMs - b.dateMs; });
+  var now = Date.now();
+
+  return React.createElement("div", { style: { minHeight: "100vh", background: CM.bg, paddingBottom: 40 } },
+    React.createElement(CmHeader, {
+      title: "Événements",
+      left: React.createElement(CmIconBtn, { onClick: props.onBack }, Cmi.back),
+      right: React.createElement(CmIconBtn, { onClick: props.onCreate, label: "new event" }, Cmi.plus),
+    }),
+
+    React.createElement("div", { style: { padding: "0 22px" } },
+      events.length === 0 ? React.createElement("div", {
+        style: { padding: 40, textAlign: "center", color: CM.sub, fontSize: 14 }
+      },
+        React.createElement("div", { style: { fontSize: 48, marginBottom: 8 } }, "🎉"),
+        "Aucun événement pour le moment.",
+        React.createElement("br"),
+        "Appuie sur ", React.createElement("b", null, "+"), " pour créer."
+      ) : events.map(function(ev) {
+        var isPast = ev.dateMs < now - 24*3600*1000;
+        var dateStr = new Date(ev.dateMs).toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long" });
+        var typ = CM_EVENT_TYPES.find(function(t){ return t.id === ev.type; }) || CM_EVENT_TYPES[5];
+        return React.createElement("div", {
+          key: ev.id,
+          onClick: function(){ props.onOpen(ev.id); },
+          style: {
+            padding: 14, borderRadius: 14, marginBottom: 10,
+            background: CM.surface, border: "1px solid " + CM.line,
+            display: "flex", alignItems: "center", gap: 12,
+            opacity: isPast ? 0.6 : 1, cursor: "pointer",
+          }
+        },
+          React.createElement("div", { style: { fontSize: 28 } }, typ.emoji),
+          React.createElement("div", { style: { flex: 1 } },
+            React.createElement("div", { style: { fontSize: 15, fontWeight: 800, color: CM.title } }, ev.title || typ.label),
+            React.createElement("div", { style: { fontSize: 12, color: CM.sub, marginTop: 2 } }, dateStr + " · " + ev.time),
+            ev.place && React.createElement("div", { style: { fontSize: 11, color: CM.muted, marginTop: 2 } }, "📍 " + ev.place)
+          ),
+          React.createElement("span", { style: { color: CM.muted } }, Cmi.chevR)
+        );
+      })
+    )
+  );
+}
+
+/* === Event Creator === */
+function EventCreator(props) {
+  var useState = React.useState;
+  var [type, setType] = useState("anniversaire");
+  var [title, setTitle] = useState("");
+  var [msg, setMsg]     = useState("");
+  var [date, setDate]   = useState("");  /* YYYY-MM-DD */
+  var [time, setTime]   = useState("18:00");
+  var [place, setPlace] = useState("");
+  var [photo, setPhoto] = useState("");
+  var [cats, setCats]   = useState({ all: true });
+
+  var contacts = cmGetContacts();
+
+  function toggleCat(cid) {
+    var next = Object.assign({}, cats);
+    if (cid === "all") { setCats({ all: !cats.all }); return; }
+    next.all = false;
+    next[cid] = !next[cid];
+    setCats(next);
+  }
+
+  function recipientsFromCats() {
+    if (cats.all) return ["*"];
+    var ids = [];
+    contacts.forEach(function(c){ if (c.category && cats[c.category]) ids.push(c.id); });
+    return ids;
+  }
+
+  function save() {
+    if (!title.trim() || !date) { cmToast("Titre et date requis", "warn"); return; }
+    var dateMs = new Date(date + "T" + (time || "18:00")).getTime();
+    var recipients = recipientsFromCats();
+    var evId = cmAddEvent({
+      type: type, title: title.trim(), message: msg.trim(),
+      dateMs: dateMs, time: time, place: place.trim(), photo: photo,
+      recipients: recipients, createdAt: Date.now(),
+    });
+    /* Schedule local reminder stubs (stored as pending notifs — the app loop can pick them up) */
+    cmAddNotif({ id:"n_"+Date.now(), kind:"event", evId: evId, label: title + " (demain)", at: dateMs - 24*3600*1000 });
+    cmAddNotif({ id:"n_"+(Date.now()+1), kind:"event", evId: evId, label: title + " (aujourd'hui)", at: dateMs });
+    cmToast("Invitation envoyée à " + (recipients[0] === "*" ? "tous" : recipients.length + " contact(s)"), "success");
+    props.onDone();
+  }
+
+  return React.createElement("div", { style: { minHeight: "100vh", background: CM.bg, paddingBottom: 40 } },
+    React.createElement(CmHeader, {
+      title: "Nouvelle invitation",
+      left: React.createElement(CmIconBtn, { onClick: props.onBack }, Cmi.back),
+    }),
+
+    React.createElement("div", { style: { padding: "0 22px" } },
+      /* Type */
+      React.createElement("div", { style: { display: "flex", gap: 8, overflowX: "auto", marginBottom: 14, paddingBottom: 4 } },
+        CM_EVENT_TYPES.map(function(t){
+          var active = type === t.id;
+          return React.createElement("button", {
+            key: t.id, onClick: function(){ setType(t.id); },
+            style: {
+              flexShrink: 0, padding: "10px 14px", borderRadius: 12,
+              background: active ? CM.primarySoft : CM.surface,
+              border: "1px solid " + (active ? CM.primary : CM.line),
+              color: active ? CM.primaryDark : CM.body,
+              fontFamily: "inherit", fontWeight: 700, fontSize: 13, cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 6,
+            }
+          }, React.createElement("span", null, t.emoji), t.label);
+        })
+      ),
+      /* Title */
+      React.createElement("input", {
+        value: title, onChange: function(e){ setTitle(e.target.value); },
+        placeholder: "Titre de l'événement", autoFocus: true,
+        style: inputSt()
+      }),
+      /* Message */
+      React.createElement("textarea", {
+        value: msg, onChange: function(e){ setMsg(e.target.value); },
+        placeholder: "Message d'invitation",
+        rows: 3, style: Object.assign({}, inputSt(), { resize: "vertical" })
+      }),
+      /* Photo URL (stub) */
+      React.createElement("input", {
+        value: photo, onChange: function(e){ setPhoto(e.target.value); },
+        placeholder: "Photo (URL ou laisser vide)",
+        style: inputSt()
+      }),
+      /* Date + Time */
+      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 } },
+        React.createElement("input", {
+          type: "date", value: date, onChange: function(e){ setDate(e.target.value); },
+          style: inputSt()
+        }),
+        React.createElement("input", {
+          type: "time", value: time, onChange: function(e){ setTime(e.target.value); },
+          style: inputSt()
+        })
+      ),
+      /* Place */
+      React.createElement("input", {
+        value: place, onChange: function(e){ setPlace(e.target.value); },
+        placeholder: "Localisation",
+        style: inputSt()
+      }),
+
+      /* Destinataires (catégories) */
+      React.createElement("h3", {
+        style: { margin: "18px 4px 10px", fontSize: 12, fontWeight: 700, color: CM.muted, textTransform: "uppercase", letterSpacing: "0.08em" }
+      }, "Envoyer à"),
+      React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 } },
+        CM_CONTACT_CATEGORIES.map(function(cat) {
+          var active = cats[cat.id];
+          var count = cat.id === "all" ? contacts.length : contacts.filter(function(c){ return c.category === cat.id; }).length;
+          return React.createElement("button", {
+            key: cat.id, onClick: function(){ toggleCat(cat.id); },
+            style: {
+              padding: "10px 14px", borderRadius: 12,
+              background: active ? CM.primary : CM.surface,
+              border: "1px solid " + (active ? CM.primary : CM.line),
+              color: active ? CM.onPrimary : CM.body,
+              fontFamily: "inherit", fontWeight: 700, fontSize: 13, cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 6,
+            }
+          }, React.createElement("span", null, cat.emoji), cat.label, React.createElement("span", {
+            style: { opacity: 0.7, fontSize: 11 }
+          }, "(" + count + ")"));
+        })
+      ),
+
+      React.createElement(CmBtn, { variant: "primary", size: "lg", fullWidth: true, onClick: save },
+        "🎫 Envoyer l'invitation")
+    )
+  );
+}
+
+function inputSt() {
+  return {
+    width: "100%", padding: 14, borderRadius: 12,
+    border: "1px solid " + CM.line, background: CM.surface, color: CM.title,
+    fontSize: 15, fontFamily: "inherit", marginBottom: 10, boxSizing: "border-box",
+  };
+}
+
+/* === Event Detail (shows invitation card with QR) === */
+function EventDetail(props) {
+  var events = cmGetEvents();
+  var ev = events.find(function(e){ return e.id === props.eventId; });
+  if (!ev) return null;
+
+  var dateStr = new Date(ev.dateMs).toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+  var typ = CM_EVENT_TYPES.find(function(t){ return t.id === ev.type; }) || CM_EVENT_TYPES[5];
+  var qrPayload = "cm:event:" + ev.id;
+
+  return React.createElement("div", { style: { minHeight: "100vh", background: CM.bg, paddingBottom: 40 } },
+    React.createElement(CmHeader, {
+      title: "Invitation",
+      left: React.createElement(CmIconBtn, { onClick: props.onBack }, Cmi.back),
+      right: React.createElement(CmIconBtn, {
+        onClick: function(){ if(confirm("Supprimer cet événement ?")){ cmRemoveEvent(ev.id); props.onBack(); } },
+        label: "delete"
+      }, Cmi.trash),
+    }),
+
+    /* Invitation card */
+    React.createElement("div", {
+      style: {
+        margin: "8px 22px 22px", padding: 22, borderRadius: 20,
+        background: "linear-gradient(135deg, " + CM.primary + ", " + CM.primaryDark + ")",
+        color: CM.onPrimary, textAlign: "center",
+        boxShadow: CM.shadowGlow,
+      }
+    },
+      React.createElement("div", { style: { fontSize: 42, marginBottom: 4 } }, typ.emoji),
+      React.createElement("div", { style: { fontSize: 12, fontWeight: 700, opacity: 0.85, textTransform: "uppercase", letterSpacing: "0.1em" } }, typ.label),
+      React.createElement("h2", { style: { margin: "6px 0 12px", fontSize: 22, fontWeight: 800 } }, ev.title),
+      ev.message && React.createElement("p", { style: { margin: "0 0 16px", fontSize: 14, opacity: 0.95 } }, ev.message),
+      ev.photo && React.createElement("div", {
+        style: { width: 140, height: 140, borderRadius: 12, background: "#fff", margin: "0 auto 16px", overflow: "hidden" }
+      },
+        React.createElement("img", { src: ev.photo, alt: "photo", style: { width: "100%", height: "100%", objectFit: "cover" } })
+      ),
+
+      /* QR Code */
+      React.createElement("div", {
+        style: {
+          width: 150, height: 150, margin: "0 auto 14px",
+          padding: 5, background: "white", borderRadius: 12,
+        }
+      }, cmGenerateQrSvg(qrPayload, 140)),
+      React.createElement("div", { style: { fontSize: 11, opacity: 0.8 } }, "Scanne ce code pour confirmer"),
+
+      /* Infos */
+      React.createElement("div", {
+        style: {
+          marginTop: 18, padding: 14, background: "rgba(255,255,255,0.15)",
+          borderRadius: 12, textAlign: "left",
+        }
+      },
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 6 } },
+          React.createElement("span", null, "📅"),
+          React.createElement("span", { style: { fontSize: 13, fontWeight: 600 } }, dateStr)
+        ),
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 6 } },
+          React.createElement("span", null, "🕒"),
+          React.createElement("span", { style: { fontSize: 13, fontWeight: 600 } }, ev.time)
+        ),
+        ev.place && React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+          React.createElement("span", null, "📍"),
+          React.createElement("span", { style: { fontSize: 13, fontWeight: 600 } }, ev.place)
+        )
+      )
+    ),
+
+    /* Recipients */
+    React.createElement("div", { style: { padding: "0 22px" } },
+      React.createElement("h3", {
+        style: { margin: "0 4px 10px", fontSize: 12, fontWeight: 700, color: CM.muted, textTransform: "uppercase", letterSpacing: "0.08em" }
+      }, "Envoyée à"),
+      React.createElement("div", {
+        style: { padding: 14, borderRadius: 14, background: CM.surface, border: "1px solid " + CM.line, fontSize: 13, color: CM.body }
+      },
+        (ev.recipients && ev.recipients[0] === "*") ? "Tous les contacts" :
+        ((ev.recipients || []).length + " contact(s) sélectionné(s)")
+      )
+    )
+  );
+}
+
+/* === QR Scanner === */
+function QrScannerScreen(props) {
+  var useState = React.useState;
+  var [manual, setManual] = useState("");
+
+  function submit() {
+    if (!manual.trim()) return;
+    if (manual.indexOf("cm:event:") === 0) {
+      var evId = manual.slice(9);
+      var ev = cmGetEvents().find(function(e){ return e.id === evId; });
+      if (ev) {
+        cmToast("Invitation trouvée : " + ev.title, "success");
+        props.onEvent(evId);
+      } else {
+        cmToast("Événement introuvable", "warn");
+      }
+    } else {
+      cmToast("QR non reconnu", "warn");
+    }
+  }
+
+  return React.createElement("div", { style: { minHeight: "100vh", background: CM.bg, paddingBottom: 40 } },
+    React.createElement(CmHeader, {
+      title: "Scanner QR",
+      left: React.createElement(CmIconBtn, { onClick: props.onBack }, Cmi.back),
+    }),
+
+    /* Camera viewfinder stub */
+    React.createElement("div", {
+      style: {
+        margin: "0 22px 18px", padding: 40, borderRadius: 20,
+        background: CM.surface2, textAlign: "center",
+        border: "2px dashed " + CM.line2,
+      }
+    },
+      React.createElement("div", { style: { fontSize: 56, marginBottom: 12 } }, "📷"),
+      React.createElement("div", { style: { fontSize: 14, color: CM.sub } }, "Pointe l'appareil photo vers le QR code"),
+      React.createElement("div", { style: { fontSize: 12, color: CM.muted, marginTop: 6 } }, "(Démo : saisie manuelle ci-dessous)")
+    ),
+
+    React.createElement("div", { style: { padding: "0 22px" } },
+      React.createElement("h3", {
+        style: { margin: "0 4px 10px", fontSize: 12, fontWeight: 700, color: CM.muted, textTransform: "uppercase", letterSpacing: "0.08em" }
+      }, "Saisie manuelle"),
+      React.createElement("input", {
+        value: manual, onChange: function(e){ setManual(e.target.value); },
+        placeholder: "cm:event:...",
+        style: inputSt()
+      }),
+      React.createElement(CmBtn, { variant: "primary", size: "lg", fullWidth: true, onClick: submit }, "Vérifier le code")
+    )
+  );
+}
+
+
+/* ══════ js/screens-settings.js ══════ */
+/* Chrome Messenger — Settings / Drawer */
+
+function SettingsScreen(props) {
+  var useState = React.useState;
+  var [, force] = useState(0);
+  var profile = cmGetProfile();
+  var settings = cmGetSettings();
+
+  function toggle(k) {
+    settings[k] = !settings[k];
+    cmSetSettings(settings);
+    force(Date.now());
+  }
+
+  return React.createElement("div", {
+    style: { minHeight: "100vh", background: CM.bg, paddingBottom: 60 }
+  },
+    React.createElement(CmHeader, {
+      onLogoTap: props.onThemeOpen,
+      left: React.createElement(CmIconBtn, { onClick: props.onBack }, Cmi.back),
+    }),
+
+    /* Profile card */
+    React.createElement("div", {
+      onClick: props.onEditProfile,
+      style: {
+        margin: "6px 22px 22px",
+        padding: "18px",
+        borderRadius: 18,
+        background: CM.surface,
+        border: "1px solid " + CM.line,
+        display: "flex", alignItems: "center", gap: 14,
+        cursor: "pointer",
+      }
+    },
+      React.createElement(CmAvatar, { name: profile.name || "?", size: 60 }),
+      React.createElement("div", { style: { flex: 1 } },
+        React.createElement("div", { style: { fontSize: 18, fontWeight: 800, color: CM.title } }, profile.name || "—"),
+        React.createElement("div", { style: { fontSize: 13, color: CM.sub, marginTop: 3 } }, profile.phone || "—"),
+        profile.bio && React.createElement("div", { style: { fontSize: 12, color: CM.muted, marginTop: 3 } }, profile.bio)
+      ),
+      React.createElement("span", { style: { color: CM.muted } }, Cmi.chevR)
+    ),
+
+    /* Settings sections — style WhatsApp/Telegram */
+    React.createElement("div", { style: { padding: "0 22px" } },
+
+      /* Apparence */
+      sectionHeading("Apparence"),
+      row(Cmi.heart, cm("themes"), CM.themeName || "Menthe", props.onThemeOpen),
+      (function(){
+        var activeLang = CM_LANGS.find(function(l){ return l.code === _cmLang; }) || CM_LANGS[0];
+        return row("🌐", cm("language") || "Langue", activeLang.name, props.onLangOpen);
+      })(),
+
+      /* Confidentialité & Sécurité (E2E) */
+      sectionHeading("Confidentialité & Sécurité"),
+      row("🔒", "Chiffrement de bout en bout", "Activé", null),
+      toggleRow("👁️", "Confirmations de lecture", !!settings.readReceipts, function(){ toggle("readReceipts"); }),
+      toggleRow("🕒", "Statut « vu à »", !!settings.lastSeen, function(){ toggle("lastSeen"); }),
+      toggleRow("📸", "Photo de profil visible", !!settings.profilePhotoVisible, function(){ toggle("profilePhotoVisible"); }),
+      row("🚫", "Contacts bloqués", (settings.blocked || []).length + " bloqué(s)", props.onBlocked),
+      row("🔑", "Verrouillage par code", settings.appLock ? "Actif" : "Inactif", props.onAppLock),
+
+      /* Notifications */
+      sectionHeading(cm("notifications_s") || "Notifications"),
+      toggleRow("🔔", "Notifications", !!settings.notifications, function(){ toggle("notifications"); }),
+      toggleRow("🔊", "Sons", !!settings.sound, function(){ toggle("sound"); }),
+      toggleRow("📳", "Vibration", !!settings.vibration, function(){ toggle("vibration"); }),
+      toggleRow("📅", "Rappels tâches (J-1 & J)", !!settings.taskReminders, function(){ toggle("taskReminders"); }),
+      toggleRow("🎉", "Rappels événements", !!settings.eventReminders, function(){ toggle("eventReminders"); }),
+
+      /* Discussions */
+      sectionHeading("Discussions"),
+      toggleRow("⌨️", "Entrée pour envoyer", !!settings.enterToSend, function(){ toggle("enterToSend"); }),
+      toggleRow("📥", "Téléchargement auto des médias", !!settings.autoDownload, function(){ toggle("autoDownload"); }),
+      toggleRow("💾", "Sauvegarde cloud chiffrée", !!settings.cloudBackup, function(){ toggle("cloudBackup"); }),
+      row("🎨", "Arrière-plan de chat", "Par défaut", null),
+      row("🔤", "Taille du texte", "Moyenne", null),
+
+      /* Stockage et données */
+      sectionHeading("Stockage et données"),
+      row("📊", "Utilisation du stockage", "— ", null),
+      row("🌍", "Réseau", "Wi-Fi + Mobile", null),
+
+      /* Comptes liés */
+      sectionHeading("Comptes"),
+      row("📱", "Appareils liés", "1 appareil actif", null),
+      row("👤", "Compte", profile.phone || "—", props.onEditProfile),
+
+      /* Aide */
+      sectionHeading("Aide"),
+      row("❓", "FAQ & Aide", null, null),
+      row("📧", "Nous contacter", null, null),
+      row("📜", "Conditions d'utilisation", null, null),
+      row("🔐", "Politique de confidentialité", null, null),
+
+      /* À propos */
+      sectionHeading(cm("about") || "À propos"),
+      row(Cmi.info, "Version", CM_VERSION),
+
+      React.createElement("button", {
+        onClick: function(){
+          if (confirm(cm("resetConfirm"))) { cmResetAll(); location.reload(); }
+        },
+        style: {
+          marginTop: 16, width: "100%", padding: "14px",
+          background: "transparent", border: "1px solid #FF4757",
+          color: "#FF4757", borderRadius: 14,
+          fontFamily: "inherit", fontWeight: 700, cursor: "pointer",
+        }
+      }, cm("resetData"))
+    )
+  );
+}
+
+/* === LANGUAGE SCREEN — page dédiée avec toutes les langues en natif === */
+function LanguageScreen(props) {
+  var useState = React.useState;
+  var [, force] = useState(0);
+  var [search, setSearch] = useState("");
+  var q = search.toLowerCase();
+
+  var filtered = CM_LANGS.filter(function(l) {
+    if (!q) return true;
+    return l.name.toLowerCase().indexOf(q) !== -1 || l.nameFr.toLowerCase().indexOf(q) !== -1 || l.code.indexOf(q) !== -1;
+  });
+
+  return React.createElement("div", {
+    style: { minHeight: "100vh", background: CM.bg, paddingBottom: 40 }
+  },
+    React.createElement(CmHeader, {
+      title: "Langue",
+      left: React.createElement(CmIconBtn, { onClick: props.onBack }, Cmi.back),
+    }),
+    React.createElement("div", { style: { padding: "0 22px 12px" } },
+      React.createElement("input", {
+        value: search, onChange: function(e){ setSearch(e.target.value); },
+        placeholder: "Rechercher une langue…",
+        style: {
+          width: "100%", padding: "12px 14px", borderRadius: 14,
+          background: CM.surface2, border: "none",
+          color: CM.title, fontSize: 14, fontFamily: "inherit",
+        }
+      })
+    ),
+    React.createElement("div", { style: { padding: "0 22px", display: "flex", flexDirection: "column", gap: 6 } },
+      filtered.map(function(lang) {
+        var active = _cmLang === lang.code;
+        return React.createElement("button", {
+          key: lang.code,
+          onClick: function(){
+            cmSetLang(lang.code); force(Date.now());
+            if (props.onLangChange) props.onLangChange();
+          },
+          style: {
+            padding: "14px 16px", borderRadius: 14,
+            background: active ? CM.primarySoft : CM.surface,
+            border: "1px solid " + (active ? CM.primary : CM.line),
+            display: "flex", alignItems: "center", gap: 14,
+            cursor: "pointer", fontFamily: "inherit",
+            width: "100%", textAlign: "left",
+          }
+        },
+          React.createElement("span", { style: { fontSize: 22 } }, lang.flag),
+          React.createElement("div", { style: { flex: 1 } },
+            React.createElement("div", {
+              style: { fontSize: 15, fontWeight: 700, color: active ? CM.primaryDark : CM.title }
+            }, lang.name),
+            React.createElement("div", {
+              style: { fontSize: 12, color: CM.sub, marginTop: 2 }
+            }, lang.nameFr)
+          ),
+          active && React.createElement("span", { style: { color: CM.primary, display: "inline-flex" } }, Cmi.check)
+        );
+      })
+    )
+  );
+}
+
+function sectionHeading(text) {
+  return React.createElement("h3", {
+    style: { margin: "18px 4px 10px", fontSize: 11, fontWeight: 700, color: CM.muted, textTransform: "uppercase", letterSpacing: "0.08em" }
+  }, text);
+}
+
+function row(icon, label, value, onClick) {
+  return React.createElement("div", {
+    onClick: onClick,
+    style: {
+      padding: "12px 14px", borderRadius: 12,
+      background: CM.surface, border: "1px solid " + CM.line,
+      display: "flex", alignItems: "center", gap: 12,
+      cursor: onClick ? "pointer" : "default", marginBottom: 6,
+    }
+  },
+    icon && React.createElement("span", { style: { color: CM.body } }, icon),
+    React.createElement("span", { style: { flex: 1, fontSize: 14, fontWeight: 600, color: CM.body } }, label),
+    value && React.createElement("span", { style: { fontSize: 13, color: CM.sub } }, value),
+    onClick && React.createElement("span", { style: { color: CM.muted } }, Cmi.chevR)
+  );
+}
+
+function toggleRow(icon, label, on, onToggle) {
+  return React.createElement("div", {
+    onClick: onToggle,
+    style: {
+      padding: "12px 14px", borderRadius: 12,
+      background: CM.surface, border: "1px solid " + CM.line,
+      display: "flex", alignItems: "center", gap: 12,
+      cursor: "pointer", marginBottom: 6,
+    }
+  },
+    React.createElement("span", { style: { fontSize: 16 } }, icon),
+    React.createElement("span", { style: { flex: 1, fontSize: 14, fontWeight: 600, color: CM.body } }, label),
+    React.createElement("div", {
+      style: {
+        width: 40, height: 22, borderRadius: 100,
+        background: on ? CM.primary : CM.line2, position: "relative", transition: "background 0.2s",
+      }
+    },
+      React.createElement("div", {
+        style: {
+          position: "absolute", top: 3, left: on ? 21 : 3,
+          width: 16, height: 16, borderRadius: "50%", background: "white",
+          transition: "left 0.2s", boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
+        }
+      })
+    )
+  );
+}
+
+
+/* ══════ js/app.js ══════ */
+/* Chrome Messenger — Main App orchestrator */
+
+function App() {
+  var useState = React.useState;
+  var useEffect = React.useEffect;
+  var [onboarded, setOnboarded] = useState(cmIsOnboarded());
+  var [view, setView] = useState("chat"); /* chat (home) | tasks | games | notifs */
+  var [params, setParams] = useState({});
+  var [, forceRender] = useState(0);
+
+  useEffect(function(){
+    /* Initialize crypto (non-blocking for UI) */
+    cmCryptoInit().catch(function(e){ console.warn("[crypto] init failed", e); });
+    /* Refresh seeds (stories expire after 24h) */
+    cmSeedIfNeeded();
+  }, []);
+
+  function nav(v, p) {
+    setView(v);
+    setParams(p || {});
+    window.scrollTo(0, 0);
+  }
+
+  if (!onboarded) {
+    return React.createElement(OnboardingFlow, {
+      onDone: function(){ setOnboarded(true); setView("chat"); }
+    });
+  }
+
+  var handlers = {
+    onOpenChat: function(id){ nav("conversation", { convId: id }); },
+    onBack: function(){ nav("chat"); },
+    onNewChat: function(){ cmToast(cm("newChat") + " (demo)", "info"); },
+    onAddStory: function(){ nav("storyCreate"); },
+    onViewStory: function(id){ nav("storyView", { storyId: id }); },
+    onOpenPremium: function(){ nav("premium"); },
+    onOpenMenu: function(){ nav("settings"); },
+    onOpenSettings: function(){ nav("settings"); },
+    onEditProfile: function(){ cmToast(cm("editProfile") + " (demo)", "info"); },
+    onThemeChange: function(){ forceRender(Date.now()); },
+    onLangChange: function(){ forceRender(Date.now()); },
+    onChanged: function(){ forceRender(Date.now()); },
+    onSeeAll: function(cat){ cmToast(cm("seeAll") + ": " + cat, "info"); },
+    onPlayGame: function(g){
+      if (g.kind === "external" && g.href) { window.open(g.href, "_blank"); return; }
+      cmToast("🎮 " + g.name + " — " + cm("comingSoon"), "info");
+    },
+    onThemeOpen: function(){ forceRender(Date.now()); cmToast("Tape sur le cameleon !", "info"); },
+    onLangOpen: function(){ nav("language"); },
+    onOpenEvents: function(){ nav("events"); },
+    onOpenQr: function(){ nav("qrScanner"); },
+  };
+
+  var screen;
+  if (view === "chat") {
+    screen = React.createElement(HomeScreen, Object.assign({}, handlers, {
+      onThemeChange: handlers.onThemeChange,
+    }));
+  } else if (view === "tasks") {
+    screen = React.createElement(TodolistScreen, handlers);
+  } else if (view === "games") {
+    screen = React.createElement(GamesScreen, handlers);
+  } else if (view === "notifs") {
+    screen = React.createElement(NotifsScreen, handlers);
+  } else if (view === "conversation") {
+    screen = React.createElement(ChatScreen, Object.assign({}, handlers, {
+      convId: params.convId,
+      onOpenEvent: function(id){ nav("eventDetail", { eventId: id }); },
+    }));
+  } else if (view === "premium") {
+    screen = React.createElement(PremiumScreen, handlers);
+  } else if (view === "settings") {
+    screen = React.createElement(SettingsScreen, Object.assign({}, handlers, {
+      onBack: function(){ nav("chat"); },
+    }));
+  } else if (view === "language") {
+    screen = React.createElement(LanguageScreen, Object.assign({}, handlers, {
+      onBack: function(){ nav("settings"); },
+    }));
+  } else if (view === "events") {
+    screen = React.createElement(EventsScreen, Object.assign({}, handlers, {
+      onBack: function(){ nav("tasks"); },
+      onCreate: function(){ nav("eventCreate"); },
+      onOpen: function(id){ nav("eventDetail", { eventId: id }); },
+    }));
+  } else if (view === "eventCreate") {
+    screen = React.createElement(EventCreator, Object.assign({}, handlers, {
+      onBack: function(){ nav("events"); },
+      onDone: function(){ nav("events"); },
+    }));
+  } else if (view === "eventDetail") {
+    screen = React.createElement(EventDetail, Object.assign({}, handlers, {
+      eventId: params.eventId,
+      onBack: function(){ nav("events"); },
+    }));
+  } else if (view === "qrScanner") {
+    screen = React.createElement(QrScannerScreen, Object.assign({}, handlers, {
+      onBack: function(){ nav("tasks"); },
+      onEvent: function(id){ nav("eventDetail", { eventId: id }); },
+    }));
+  } else if (view === "storyView") {
+    screen = React.createElement(StoryViewer, Object.assign({}, handlers, {
+      storyId: params.storyId,
+      onClose: function(){ nav("chat"); },
+    }));
+  } else if (view === "storyCreate") {
+    screen = React.createElement(StoryCreator, Object.assign({}, handlers, {
+      onClose: function(){ nav("chat"); },
+      onDone: function(){ nav("chat"); },
+    }));
+  } else {
+    screen = React.createElement("div", null, "404");
+  }
+
+  /* Hide bottom nav during fullscreen views */
+  var hideNav = view === "conversation" || view === "storyView" || view === "storyCreate" || view === "premium" || view === "settings" || view === "language" || view === "events" || view === "eventCreate" || view === "eventDetail" || view === "qrScanner";
+
+  var navItems = [
+    { id: "chat",   label: cm("navChat"),   icon: view === "chat"   ? Cmi.chat  : Cmi.chat },
+    { id: "tasks",  label: cm("navTasks"),  icon: Cmi.tasks, badge: false },
+    { id: "games",  label: cm("navGames"),  icon: Cmi.games },
+    { id: "notifs", label: cm("navNotifs"), icon: Cmi.bell, badge: cmUnreadNotifsCount() > 0 },
+  ];
+
+  /* Layout: flex column so nav bar sticks to bottom, screen fills remaining height */
+  return React.createElement("div", {
+    style: {
+      maxWidth: 480, margin: "0 auto",
+      minHeight: "100vh", height: "100vh",
+      position: "relative",
+      display: "flex", flexDirection: "column",
+      overflow: "hidden",
+    }
+  },
+    React.createElement("div", {
+      style: { flex: 1, overflowY: "auto", overflowX: "hidden" }
+    }, screen),
+    !hideNav && React.createElement(CmBottomNav, {
+      items: navItems, active: view, onNav: nav,
+    })
+  );
+}
+
+
+/* ══════ js/main.js ══════ */
+/* Chrome Messenger — entry point */
+
+(function() {
+  /* Apply saved theme immediately, before React mounts */
+  var savedTheme = localStorage.getItem(CM_KEYS.theme) || "mint";
+  cmApplyTheme(savedTheme);
+
+  var root = ReactDOM.createRoot(document.getElementById("root"));
+  root.render(React.createElement(App));
+})();
+

@@ -1,0 +1,24 @@
+# GitHub Linguist overrides pour que les stats de langage refletent la realite du code.
+# Voir : https://github.com/github-linguist/linguist/blob/master/docs/overrides.md
+
+# Exclure le code legacy du comptage
+js-legacy/**        linguist-vendored
+vendor/**           linguist-vendored
+bundle.js           linguist-vendored
+build.js            linguist-vendored
+server.js           linguist-vendored
+
+# Generated
+dist/**             linguist-generated
+sw.js               linguist-generated
+workbox-*.js        linguist-generated
+
+# Documents (n'affectent pas les stats)
+*.md                linguist-documentation
+
+# Traiter les fichiers .tsx/.ts comme TypeScript (par defaut deja)
+*.tsx               linguist-language=TypeScript
+*.ts                linguist-language=TypeScript
+
+# Pour que les stats montrent : TypeScript (90%+), CSS, HTML
+* text=auto eol=lf

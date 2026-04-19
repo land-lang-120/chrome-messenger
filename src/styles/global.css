@@ -1,0 +1,109 @@
+/* ============================================================
+   Chrome Messenger — Styles globaux
+   Cf. docs/brand-guidelines.md pour les tokens.
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root,
+#root * {
+  font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+html,
+body {
+  background: var(--cm-bg);
+  color: var(--cm-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  outline: none;
+  cursor: pointer;
+}
+button:active {
+  transform: scale(0.98);
+}
+
+input,
+select,
+textarea {
+  font-size: 16px; /* evite zoom iOS au focus */
+}
+
+/* Focus visible pour accessibilite */
+:focus-visible {
+  outline: 2px solid var(--cm-primary);
+  outline-offset: 2px;
+}
+
+/* Splash visible avant que React monte */
+#cm-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #30d79c;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  transition: opacity 0.5s ease;
+}
+#cm-splash.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#cm-splash .orb {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  filter: blur(40px);
+  animation: cm-orb-float 4s ease-in-out infinite;
+}
+#cm-splash .orb.o1 { top: 10%; left: 15%; }
+#cm-splash .orb.o2 { bottom: 15%; right: 10%; animation-delay: 2s; }
+#cm-splash .orb.o3 { top: 50%; right: 25%; animation-delay: 1s; width: 140px; height: 140px; }
+
+#cm-splash .title {
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  z-index: 1;
+}
+
+@keyframes cm-orb-float {
+  0%,
+  100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -20px) scale(1.1); }
+}
+
+/* Scroll horizontal sans scrollbar visible (statuts, filtres, pills) */
+.cm-scroll-x {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.cm-scroll-x::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}

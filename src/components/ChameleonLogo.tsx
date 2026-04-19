@@ -1,0 +1,51 @@
+import { type CSSProperties } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
+
+/**
+ * Logo Chameleon — vrai SVG original fourni par l'utilisateur.
+ * 3 couches : fond blanc + corps (couleur theme) + reflet blanc dans oeil.
+ */
+const BG_PATH =
+  'M306.5,510.92q-72.46,0-144.92.08c-3,0-3.58-.6-3.58-3.58q.15-111.92,0-223.84c0-3,.6-3.58,3.58-3.58q144.92.15,289.84,0c3,0,3.58.6,3.58,3.58q-.15,111.92,0,223.84c0,3-.6,3.59-3.58,3.58Q379,510.82,306.5,510.92ZM315.56,398c1.22,2.26,1.95,3.53,2.61,4.84a22,22,0,0,1-3.42,24.62,22.23,22.23,0,0,1-24.26,5.62A21.93,21.93,0,0,1,277,408.49a21.7,21.7,0,0,1,21.32-17.56c18.31-.13,36.62-.07,54.93-.06,11.83,0,11.83,0,9.69-11.54-5.24-28.25-30.64-50.43-59.42-52-3.09-.17-4.64.38-4.4,3.94.29,4.31-.35,8.71.18,13,.67,5.42-1.21,7.58-6.63,7.29a23.23,23.23,0,0,0-6.37,1.07c-27.36,6.55-45,33.43-39.73,60.55,5.45,28.11,31.3,46.7,59.42,42.72,25.22-3.57,42.67-28.81,36.95-53.48-.46-2-.4-4.42-3.62-4.37C331.71,398.1,324.08,398,315.56,398Zm-30.68,15.12a13.45,13.45,0,0,0,13.66,13.55,13.8,13.8,0,1,0-13.66-13.55Z';
+const BODY_PATH =
+  'M315.56,398c8.52,0,16.15.07,23.77,0,3.22-.05,3.16,2.36,3.62,4.37,5.72,24.67-11.73,49.91-36.95,53.48-28.12,4-54-14.61-59.42-42.72-5.26-27.12,12.37-54,39.73-60.55a23.23,23.23,0,0,1,6.37-1.07c5.42.29,7.3-1.87,6.63-7.29-.53-4.26.11-8.66-.18-13-.24-3.56,1.31-4.11,4.4-3.94,28.78,1.59,54.18,23.77,59.42,52,2.14,11.57,2.14,11.55-9.69,11.54-18.31,0-36.62-.07-54.93.06A21.7,21.7,0,0,0,277,408.49a21.93,21.93,0,0,0,13.48,24.62,22.23,22.23,0,0,0,24.26-5.62,22,22,0,0,0,3.42-24.62C317.51,401.56,316.78,400.29,315.56,398Zm11-44.92a13.39,13.39,0,0,0-.22,26.77A13.38,13.38,0,0,0,340,366.41,13.8,13.8,0,0,0,326.54,353.11Z';
+const EYE_PATH = 'M284.88,413.15a13.75,13.75,0,1,1,13.66,13.55A13.45,13.45,0,0,1,284.88,413.15Z';
+const HI_PATH = 'M326.54,353.11A13.8,13.8,0,0,1,340,366.41a13.38,13.38,0,0,1-13.64,13.47,13.39,13.39,0,0,1,.22-26.77Z';
+const TFORM = 'translate(-158 -280)';
+
+export interface ChameleonLogoProps {
+  readonly size?: number;
+  readonly color?: string;
+  readonly showBg?: boolean;
+  readonly bgFill?: string;
+  readonly eyeFill?: string;
+  readonly style?: CSSProperties;
+  readonly onClick?: () => void;
+}
+
+export function ChameleonLogo(props: ChameleonLogoProps) {
+  const { theme } = useTheme();
+  const size = props.size ?? 48;
+  const color = props.color ?? theme.primary;
+  const showBg = props.showBg !== false;
+  const bgFill = props.bgFill ?? '#FEFEFE';
+  const eyeFill = props.eyeFill ?? '#F8FCFA';
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 297 231"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: 'block', ...props.style }}
+      aria-label="Chrome Messenger"
+      onClick={props.onClick}
+      role={props.onClick ? 'button' : undefined}
+    >
+      {showBg && <path d={BG_PATH} fill={bgFill} transform={TFORM} />}
+      <path d={BODY_PATH} fill={color} transform={TFORM} />
+      <path d={EYE_PATH} fill={color} transform={TFORM} />
+      <path d={HI_PATH} fill={eyeFill} transform={TFORM} />
+    </svg>
+  );
+}

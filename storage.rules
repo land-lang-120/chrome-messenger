@@ -1,0 +1,27 @@
+rules_version = '2';
+
+/**
+ * Firebase Storage rules — medias uploades.
+ * Principe : chaque user ecrit dans son propre dossier, lecture authentifiee.
+ */
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    /* Avatars & stories & photos evenements dans /users/{uid}/... */
+    match /users/{uid}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size < 10 * 1024 * 1024      // 10 MB max
+                   && (request.resource.contentType.matches('image/.*')
+                       || request.resource.contentType.matches('video/.*')
+                       || request.resource.contentType.matches('audio/.*'));
+    }
+
+    /* Catch-all deny */
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

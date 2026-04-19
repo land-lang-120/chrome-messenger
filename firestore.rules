@@ -1,0 +1,138 @@
+rules_version = '2';
+
+/**
+ * ============================================================
+ * FIRESTORE SECURITY RULES — Chrome Messenger
+ * ============================================================
+ *
+ * Principe : DENY-BY-DEFAULT + whitelist explicite.
+ * Regles testees : voir `firestore.rules.test.ts`.
+ *
+ * ATTENTION : tout changement ici doit s'accompagner de tests.
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ================ HELPERS ================ */
+
+    function isAuth() {
+      return request.auth != null;
+    }
+    function isSelf(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+    function isMemberOf(conv) {
+      return isAuth() && request.auth.uid in conv.members;
+    }
+    function keysOnly(allowed) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowed);
+    }
+
+    /* ================ USERS ================ */
+
+    match /users/{uid} {
+      // Tout authentifie peut LIRE un profil (pour afficher noms / photos)
+      allow read: if isAuth();
+
+      // Seul l'owner peut creer SON doc, et on exige certains champs
+      allow create: if isSelf(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.keys().hasAll(['uid', 'phone', 'name', 'publicKey', 'createdAtMs'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 40;
+
+      // Update : owner uniquement, champs limites
+      allow update: if isSelf(uid)
+        && keysOnly(['name', 'avatar', 'bio', 'lastSeenMs', 'settings']);
+
+      // Suppression : jamais par le client (Cloud Function onAuthUserDelete)
+      allow delete: if false;
+    }
+
+    /* ================ CONTACTS ================ */
+
+    match /contacts/{ownerUid}/list/{contactUid} {
+      allow read, write: if isSelf(ownerUid);
+    }
+
+    /* ================ CONVERSATIONS ================ */
+
+    match /conversations/{convId} {
+      allow read: if isAuth() && request.auth.uid in resource.data.members;
+
+      allow create: if isAuth()
+        && request.auth.uid in request.resource.data.members
+        && request.resource.data.keys().hasAll(['members', 'type', 'createdAtMs']);
+
+      // Update : membres uniquement, et on limite quels champs peuvent changer
+      allow update: if isAuth()
+        && request.auth.uid in resource.data.members
+        && keysOnly(['lastMessageId', 'lastMessageAtMs', 'pinnedEventId', 'name', 'avatar']);
+
+      allow delete: if false;
+
+      /* Sous-collection messages */
+      match /messages/{msgId} {
+        function conv() {
+          return get(/databases/$(database)/documents/conversations/$(convId)).data;
+        }
+
+        allow read: if isAuth() && request.auth.uid in conv().members;
+
+        allow create: if isAuth()
+          && request.resource.data.senderId == request.auth.uid
+          && request.auth.uid in conv().members
+          && request.resource.data.keys().hasAll(['senderId', 'kind', 'cipher', 'sentAtMs'])
+          && request.resource.data.cipher.keys().hasOnly(['ciphertext', 'iv']);
+
+        // Seul le sender peut "marquer" (readAt etc), champs restreints
+        allow update: if isAuth()
+          && request.auth.uid in conv().members
+          && keysOnly(['readAtByUid', 'reactionsByUid', 'deliveredAtMs']);
+
+        allow delete: if false;
+      }
+    }
+
+    /* ================ STORIES ================ */
+
+    match /stories/{storyId} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAuth()
+        && resource.data.ownerId == request.auth.uid
+        && keysOnly(['viewedByUid']);
+      allow delete: if isAuth() && resource.data.ownerId == request.auth.uid;
+    }
+
+    /* ================ TASKS ================ */
+
+    match /tasks/{ownerUid}/list/{taskId} {
+      allow read, write: if isSelf(ownerUid);
+    }
+
+    /* ================ EVENTS ================ */
+
+    match /events/{eventId} {
+      allow read: if isAuth() && (
+        resource.data.ownerId == request.auth.uid
+        || (resource.data.recipients.uids != null && request.auth.uid in resource.data.recipients.uids)
+      );
+      allow create: if isAuth() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isAuth() && resource.data.ownerId == request.auth.uid;
+    }
+
+    /* ================ NOTIFS ================ */
+
+    match /notifs/{ownerUid}/list/{notifId} {
+      allow read, write: if isSelf(ownerUid);
+    }
+
+    /* ================ DENY-ALL CATCH-ALL ================ */
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

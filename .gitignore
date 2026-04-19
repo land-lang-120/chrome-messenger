@@ -1,5 +1,52 @@
+# Dependencies
 node_modules/
-*.log
+.pnp/
+.pnp.js
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment (SECURITE : ne JAMAIS commit des secrets)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Firebase
+.firebase/
+*-debug.log
+firebase-debug.log
+firestore-debug.log
+firebase-adminsdk-*.json
+
+# Editor
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
 .DS_Store
-.vscode/
 .claude/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+.vitest/
+
+# Misc
+.cache/
+
+# Legacy (ancienne version JS pre-TypeScript)
+js-legacy/
+bundle.js
+vendor/
