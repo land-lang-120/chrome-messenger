@@ -92,6 +92,9 @@ jobs:
         working-directory: twa
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'chromemessenger2026' }}
+          # Bubblewrap lit ces deux variables pour eviter les prompts interactifs
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'chromemessenger2026' }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'chromemessenger2026' }}
         run: |
           bubblewrap build \
             --skipPwaValidation \
