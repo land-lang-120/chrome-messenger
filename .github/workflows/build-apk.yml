@@ -57,18 +57,17 @@ jobs:
           EOF
           cat ~/.bubblewrap/config.json
 
-      # Génère la clé de signature (persistée dans les secrets GH Actions apres 1er build)
-      - name: Generate keystore
+      # Keystore STABLE stocke en secret GitHub (APK_KEYSTORE_B64) pour que
+      # le fingerprint SHA-256 reste constant entre les builds. Ce fingerprint
+      # doit matcher celui publie dans assetlinks.json sur le host domain
+      # (https://land-lang-120.github.io/.well-known/assetlinks.json) pour
+      # que la TWA Android fonctionne en mode fullscreen (sans URL bar).
+      - name: Restore stable keystore from secret
         env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'chromemessenger2026' }}
+          APK_KEYSTORE_B64: ${{ secrets.APK_KEYSTORE_B64 }}
         run: |
-          keytool -genkey -v \
-            -keystore android.keystore \
-            -alias android \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass "$KEYSTORE_PASSWORD" \
-            -keypass "$KEYSTORE_PASSWORD" \
-            -dname "CN=Chrome Messenger,OU=CloneX Studio,O=CloneX,L=Yaounde,ST=Centre,C=CM"
+          echo "$APK_KEYSTORE_B64" | base64 -d > android.keystore
+          keytool -list -v -keystore android.keystore -alias android -storepass '${{ secrets.KEYSTORE_PASSWORD }}' | grep -E "SHA256|SHA 256" || true
 
       # Init bubblewrap en non-interactif : on place notre twa-manifest dans le
       # dossier de travail ET on lance la generation du projet Android
