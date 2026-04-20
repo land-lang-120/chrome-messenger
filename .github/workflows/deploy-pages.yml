@@ -1,0 +1,67 @@
+name: Deploy PWA to GitHub Pages
+
+# Construit Chrome Messenger avec Vite puis deploie le dossier dist/ sur la
+# branche gh-pages qui sera servie par GitHub Pages. Sans ca, GitHub Pages
+# sert les fichiers source (index.html qui reference /src/main.tsx introuvable).
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '.github/workflows/build-apk.yml'
+      - 'twa-manifest.json'
+      - '**.md'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        env:
+          VITE_APP_ENV: prod
+          VITE_ENABLE_EMULATORS: 'false'
+        run: npx vite build
+
+      - name: Copy 404 fallback (SPA routing)
+        run: cp dist/index.html dist/404.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

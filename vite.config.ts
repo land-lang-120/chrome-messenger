@@ -11,7 +11,12 @@ import path from 'node:path';
  * - `sourcemap: true` en prod est acceptable : les bundles sont minifies et la CSP empeche l'exec
  * - Les variables d'env commencant par VITE_ sont exposees au client (jamais de secrets !)
  */
+// Base du site : GitHub Pages sert depuis /chrome-messenger/ donc on doit
+// prefixer tous les assets. En dev, '/' pour que vite dev-server fonctionne.
+const BASE = process.env.VITE_APP_ENV === 'prod' ? '/chrome-messenger/' : '/';
+
 export default defineConfig({
+  base: BASE,
   plugins: [
     react(),
     VitePWA({
