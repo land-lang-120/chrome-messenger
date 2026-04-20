@@ -22,6 +22,9 @@
     "deploy:hosting": "firebase deploy --only hosting"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
     "firebase": "^10.12.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -35,11 +38,11 @@
     "@testing-library/user-event": "^14.5.2",
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
-    "csstype": "3.1.3",
     "@typescript-eslint/eslint-plugin": "^7.8.0",
     "@typescript-eslint/parser": "^7.8.0",
     "@vitejs/plugin-react": "^4.2.1",
     "@vitest/coverage-v8": "^1.6.0",
+    "csstype": "3.1.3",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.2",

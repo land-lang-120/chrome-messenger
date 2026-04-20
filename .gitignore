@@ -50,3 +50,10 @@ test-results/
 js-legacy/
 bundle.js
 vendor/
+
+# Android Capacitor build artifacts (on garde le dossier android/ sauf build/)
+android/app/build/
+android/build/
+android/.gradle/
+android/app/android.keystore
+android/app/release/

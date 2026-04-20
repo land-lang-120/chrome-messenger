@@ -11,9 +11,17 @@ import path from 'node:path';
  * - `sourcemap: true` en prod est acceptable : les bundles sont minifies et la CSP empeche l'exec
  * - Les variables d'env commencant par VITE_ sont exposees au client (jamais de secrets !)
  */
-// Base du site : GitHub Pages sert depuis /chrome-messenger/ donc on doit
-// prefixer tous les assets. En dev, '/' pour que vite dev-server fonctionne.
-const BASE = process.env.VITE_APP_ENV === 'prod' ? '/chrome-messenger/' : '/';
+// Base du site :
+// - Build Capacitor (APK natif) → '/' (fichiers embarques en local dans l'APK)
+// - Build GitHub Pages prod → '/chrome-messenger/' (sous-chemin du user-site)
+// - Vite dev-server → '/'
+// Selection via VITE_BUILD_TARGET=capacitor.
+const BASE =
+  process.env.VITE_BUILD_TARGET === 'capacitor'
+    ? './'
+    : process.env.VITE_APP_ENV === 'prod'
+      ? '/chrome-messenger/'
+      : '/';
 
 export default defineConfig({
   base: BASE,

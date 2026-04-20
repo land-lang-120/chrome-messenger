@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Chrome Messenger</string>
+    <string name="title_activity_main">Chrome Messenger</string>
+    <string name="package_name">com.clonexstudio.chromemessenger</string>
+    <string name="custom_url_scheme">com.clonexstudio.chromemessenger</string>
+</resources>
