@@ -43,6 +43,20 @@ jobs:
           yes | sdkmanager --licenses || true
           sdkmanager "build-tools;33.0.2" "platforms;android-33" "platform-tools"
 
+      # Bubblewrap stocke ses reglages dans ~/.llama/llama-config.json.
+      # On le pre-remplit pour dire : utilise le JDK et SDK deja installes,
+      # evite la question interactive "Do you want Bubblewrap to install the JDK?".
+      - name: Pre-configure Bubblewrap (skip interactive JDK prompt)
+        run: |
+          mkdir -p ~/.bubblewrap
+          cat > ~/.bubblewrap/config.json <<EOF
+          {
+            "jdkPath": "$JAVA_HOME",
+            "androidSdkPath": "$ANDROID_HOME"
+          }
+          EOF
+          cat ~/.bubblewrap/config.json
+
       # Génère la clé de signature (persistée dans les secrets GH Actions apres 1er build)
       - name: Generate keystore
         env:
