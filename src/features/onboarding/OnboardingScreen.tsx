@@ -129,18 +129,16 @@ export function OnboardingScreen() {
       <div style={containerStyle}>
         <div style={centerStyle}>
           <ChameleonLogo size={200} />
-          {/* Phrase unifiee : Bienvenue sur Chrome Messenger, la messagerie qui s'adapte a toi */}
-          <h1
-            style={{
-              fontSize: 26, fontWeight: 800, color: 'var(--cm-title)',
-              margin: '32px 0 14px', letterSpacing: '-0.3px',
-              textAlign: 'center', maxWidth: 340, lineHeight: 1.25,
-            }}
-          >
-            Bienvenue sur <span style={{ color: 'var(--cm-primary)' }}>Chrome Messenger</span>,
-            la messagerie qui s'adapte à toi.
+          <h1 style={{ fontSize: 16, fontWeight: 600, color: 'var(--cm-sub)', margin: '28px 0 6px' }}>
+            {t('welcome')}
           </h1>
-          <Button variant="primary" size="lg" fullWidth style={{ maxWidth: 320, marginTop: 28 }} onClick={() => setStep('phone')}>
+          <h2 style={{ fontSize: 32, fontWeight: 800, color: 'var(--cm-title)', margin: '0 0 12px', letterSpacing: '-0.5px' }}>
+            {t('appName')}
+          </h2>
+          <p style={{ fontSize: 15, color: 'var(--cm-sub)', margin: '0 0 40px', maxWidth: 320, lineHeight: 1.5 }}>
+            La messagerie qui s'adapte à toi.
+          </p>
+          <Button variant="primary" size="lg" fullWidth style={{ maxWidth: 320 }} onClick={() => setStep('phone')}>
             {t('getStarted')}
           </Button>
         </div>
