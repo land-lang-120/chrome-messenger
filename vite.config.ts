@@ -23,11 +23,16 @@ const BASE =
       ? '/chrome-messenger/'
       : '/';
 
+// En mode Capacitor, on desactive le service worker : il est inutile
+// (tout est deja local dans l'APK) ET peut planter en intercepant les
+// requetes vers le scheme natif https://localhost.
+const IS_CAPACITOR = process.env.VITE_BUILD_TARGET === 'capacitor';
+
 export default defineConfig({
   base: BASE,
   plugins: [
     react(),
-    VitePWA({
+    ...(IS_CAPACITOR ? [] : [VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.svg'],
       manifest: {
@@ -62,7 +67,7 @@ export default defineConfig({
           },
         ],
       },
-    }),
+    })]),
   ],
   resolve: {
     alias: {

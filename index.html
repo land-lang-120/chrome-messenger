@@ -6,55 +6,96 @@
   <meta name="theme-color" content="#30D79C" />
 
   <!--
-    SECURITE : Content Security Policy stricte.
-    - default-src 'self' : tout par defaut depuis ce domaine
-    - script-src : + gstatic (Firebase SDK)
-    - style-src : + fonts.googleapis.com (Manrope) + inline pour styles dynamiques
-    - connect-src : Firebase endpoints + WebSockets Firestore
-    - frame-ancestors 'none' : anti-clickjacking
-    - object-src 'none' : interdit <object>, <embed>
+    CSP permissive pour supporter a la fois :
+    - Web (GitHub Pages)
+    - APK native (Capacitor, scheme https://localhost)
+    - PWA installee
+
+    On autorise 'self' + les domaines Google Fonts + Firebase.
+    Pas de CSP trop stricte qui bloque Capacitor.
   -->
   <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self' https://www.gstatic.com;
+    default-src * data: blob: 'unsafe-inline' 'unsafe-eval' gap: ws: wss:;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.gstatic.com https://*.googleapis.com https://localhost;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-    font-src 'self' https://fonts.gstatic.com data:;
-    img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleapis.com;
-    connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com;
-    frame-ancestors 'none';
-    form-action 'none';
-    base-uri 'self';
+    font-src 'self' data: https://fonts.gstatic.com;
+    img-src 'self' data: blob: https: file:;
+    connect-src 'self' data: https: wss: ws:;
+    media-src *;
     object-src 'none';
-    upgrade-insecure-requests;
   " />
 
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="description" content="Chrome Messenger — Une messagerie qui change de couleur comme tu changes d'humeur. Chats chiffres bout en bout, todolist, jeux et statuts." />
+  <meta name="description" content="Chrome Messenger — Messagerie chiffree bout en bout avec todolist, jeux et statuts." />
 
   <title>Chrome Messenger</title>
 
-  <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
+  <link rel="icon" type="image/png" href="/icons/logo.png" />
   <link rel="manifest" href="/manifest.json" />
 
-  <!-- Manrope (police officielle) -->
+  <!-- Manrope (police) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* Splash natif — visible avant montage React */
+    #cm-splash {
+      position: fixed; inset: 0; z-index: 9999;
+      background: #30D79C;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 22px;
+      transition: opacity 0.5s ease;
+      overflow: hidden;
+    }
+    #cm-splash.hide { opacity: 0; pointer-events: none; }
+    #cm-splash .logo-wrap {
+      width: 140px; height: 140px; border-radius: 30px;
+      background: #FFFFFF;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    }
+    #cm-splash .logo-wrap img {
+      width: 110px; height: 110px; object-fit: contain;
+    }
+    #cm-splash .title {
+      color: #FFFFFF; font-size: 28px; font-weight: 800;
+      letter-spacing: -0.5px; font-family: 'Manrope', system-ui, sans-serif;
+    }
+    #cm-splash .tag {
+      color: rgba(255,255,255,0.85); font-size: 13px;
+      font-weight: 500; font-family: 'Manrope', system-ui, sans-serif;
+    }
+    #cm-splash .orb {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      filter: blur(38px);
+    }
+    #cm-splash .orb.o1 { width: 220px; height: 220px; top: 8%; left: 10%; }
+    #cm-splash .orb.o2 { width: 180px; height: 180px; bottom: 12%; right: 8%; }
+    #cm-splash .orb.o3 { width: 130px; height: 130px; top: 55%; right: 28%; }
+    html, body { margin: 0; padding: 0; background: #FFFFFF; }
+  </style>
 </head>
 <body>
-  <!-- Splash avant React monte -->
+  <!-- Splash : LOGO au-dessus, texte "Chrome Messenger" en dessous -->
   <div id="cm-splash">
     <div class="orb o1"></div>
     <div class="orb o2"></div>
     <div class="orb o3"></div>
+    <div class="logo-wrap">
+      <img src="/icons/logo.png" alt="Chrome Messenger" />
+    </div>
     <div class="title">Chrome Messenger</div>
+    <div class="tag">Messagerie qui s'adapte a toi</div>
   </div>
 
   <!-- Racine React -->
   <div id="root"></div>
 
-  <!-- Point d'entree TypeScript (Vite resout automatiquement) -->
+  <!-- Point d'entree -->
   <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
