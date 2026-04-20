@@ -2,11 +2,13 @@ import { useMemo, useState } from 'react';
 
 import { Header } from '../../components/Header';
 import { IconButton } from '../../components/IconButton';
-import { IconClose, IconMenu } from '../../components/Icons';
+import { IconMenu, IconTrash } from '../../components/Icons';
 import { useI18n } from '../../contexts/I18nContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { getNotifs, setNotifs } from '../../services/localDb';
+import { getNotifs } from '../../services/localDb';
 import type { Notification, NotificationKind } from '../../types/notification';
+import { ClearHistorySheet } from './ClearHistorySheet';
+import { NotifsOptionsSheet } from './NotifsOptionsSheet';
 
 type Filter = 'all' | 'call-missed' | 'task-reminder' | 'event-reminder';
 
@@ -18,6 +20,7 @@ function matchFilter(kind: NotificationKind, f: Filter): boolean {
 export interface NotifsScreenProps {
   readonly onThemeTap: () => void;
   readonly onOpenSettings: () => void;
+  readonly onOpenDnd?: () => void;
 }
 
 export function NotifsScreen(props: NotifsScreenProps) {
@@ -25,13 +28,12 @@ export function NotifsScreen(props: NotifsScreenProps) {
   const { theme } = useTheme();
   const [filter, setFilter] = useState<Filter>('all');
   const [items, setItems] = useState<Notification[]>(() => getNotifs());
+  const [clearOpen, setClearOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
 
   const filtered = useMemo(() => items.filter((n) => matchFilter(n.kind, filter)), [items, filter]);
 
-  function clearAll() {
-    setNotifs([]);
-    setItems([]);
-  }
+  const refresh = () => setItems(getNotifs());
 
   const pills: readonly { id: Filter; label: string }[] = [
     { id: 'all', label: t('notifAll') },
@@ -43,9 +45,22 @@ export function NotifsScreen(props: NotifsScreenProps) {
   return (
     <div style={{ paddingBottom: 20, background: 'var(--cm-bg)' }}>
       <Header
-        left={<IconButton label="clear" onClick={clearAll}><IconClose /></IconButton>}
-        right={<IconButton label="menu" onClick={props.onOpenSettings}><IconMenu /></IconButton>}
+        left={<IconButton label="Supprimer l'historique" onClick={() => setClearOpen(true)}><IconTrash /></IconButton>}
+        right={<IconButton label="Options notifications" onClick={() => setOptionsOpen(true)}><IconMenu /></IconButton>}
         onLogoTap={props.onThemeTap}
+      />
+
+      {/* Sheets */}
+      <ClearHistorySheet
+        open={clearOpen}
+        onClose={() => setClearOpen(false)}
+        onCleared={refresh}
+      />
+      <NotifsOptionsSheet
+        open={optionsOpen}
+        onClose={() => setOptionsOpen(false)}
+        onOpenDnd={props.onOpenDnd}
+        onRefresh={refresh}
       />
 
       <section style={{ padding: '0 16px' }}>

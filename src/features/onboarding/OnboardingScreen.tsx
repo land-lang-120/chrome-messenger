@@ -307,18 +307,33 @@ export function OnboardingScreen() {
           <Input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              // Capitalise auto chaque mot : "joseph lando" -> "Joseph Lando"
+              const capitalized = e.target.value
+                .split(/(\s+)/)
+                .map((part) =>
+                  part && /\S/.test(part)
+                    ? part.charAt(0).toUpperCase() + part.slice(1)
+                    : part,
+                )
+                .join('');
+              setName(capitalized);
+            }}
             placeholder={t('yourName')}
             maxLength={40}
+            autoCapitalize="words"
             autoFocus
           />
           <Input
             type="text"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            placeholder={t('yourBio')}
-            maxLength={200}
+            placeholder={t('yourBio') + ' (80 max)'}
+            maxLength={80}
           />
+          <div style={{ fontSize: 11, color: 'var(--cm-muted)', textAlign: 'right', marginTop: -8 }}>
+            {bio.length}/80
+          </div>
           {err && <p style={{ color: '#FF4757', fontSize: 13, textAlign: 'center' }}>{err}</p>}
         </div>
       </div>

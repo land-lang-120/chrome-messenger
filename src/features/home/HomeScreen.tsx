@@ -252,13 +252,15 @@ export function HomeScreen(props: HomeScreenProps) {
         )}
       </section>
 
-      {/* FAB chat flottant */}
+      {/* FAB chat flottant. Positionne au-dessus de la nav bar
+          (nav ~74px + marge 16px = bottom 90px) + safe-area */}
       <button
         type="button"
         aria-label="New chat"
         onClick={props.onStartChat}
         style={{
-          position: 'fixed', right: 18, bottom: 84,
+          position: 'fixed', right: 18,
+          bottom: 'calc(96px + env(safe-area-inset-bottom))',
           width: 54, height: 54, borderRadius: 18,
           background: theme.primary, color: '#FFF',
           border: 'none', cursor: 'pointer',

@@ -6,10 +6,14 @@ import { useMemo, useState } from 'react';
 
 import { Header } from '../../components/Header';
 import { IconButton } from '../../components/IconButton';
-import { IconBack, IconMenu, IconTasks, IconPlus } from '../../components/Icons';
+import { IconChevDown, IconChevUp, IconMenu, IconPlus } from '../../components/Icons';
+import { getContactById, getTasksByDate } from '../../services/localDb';
+import { useAuth } from '../../contexts/AuthContext';
+import { AddTaskSheet } from './AddTaskSheet';
+import { TaskOptionsSheet } from './TaskOptionsSheet';
+import { useToast } from '../../contexts/ToastContext';
 import { useI18n } from '../../contexts/I18nContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { getTasksByDate } from '../../services/localDb';
 
 type Mode = 'month' | 'week';
 
@@ -43,10 +47,20 @@ export interface TodoScreenProps {
 export function TodoScreen(props: TodoScreenProps) {
   const { t } = useI18n();
   const { theme } = useTheme();
-  const [mode, setMode] = useState<Mode>('month');
+  const { user } = useAuth();
+  // Vue par defaut : week (calendrier compact). Toggle vers month via fleche bas.
+  const [mode, setMode] = useState<Mode>('week');
   const [selected, setSelected] = useState<Date>(new Date());
+  const [addOpen, setAddOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const toast = useToast();
 
-  const tasks = useMemo(() => getTasksByDate(isoDate(selected)), [selected]);
+  const tasks = useMemo(
+    () => getTasksByDate(isoDate(selected)).filter((t) => !t.done),
+
+    [selected, refreshKey],
+  );
 
   const monthLabel = useMemo(() => {
     return selected.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
@@ -70,12 +84,27 @@ export function TodoScreen(props: TodoScreenProps) {
     <div style={{ paddingBottom: 20, background: 'var(--cm-bg)' }}>
       <Header
         left={
-          <IconButton label="toggle view" onClick={() => setMode((m) => (m === 'month' ? 'week' : 'month'))}>
-            {mode === 'month' ? <IconTasks /> : <IconBack />}
+          // Fleche bas en mode week (pour ouvrir le mois), haut en mode month (pour reduire)
+          <IconButton
+            label={mode === 'week' ? 'Voir le mois' : 'Reduire'}
+            onClick={() => setMode((m) => (m === 'month' ? 'week' : 'month'))}
+          >
+            {mode === 'week' ? <IconChevDown /> : <IconChevUp />}
           </IconButton>
         }
-        right={<IconButton label="menu" onClick={props.onOpenSettings}><IconMenu /></IconButton>}
+        right={
+          <IconButton label="Options Tasks" onClick={() => setOptionsOpen(true)}>
+            <IconMenu />
+          </IconButton>
+        }
         onLogoTap={props.onThemeTap}
+      />
+
+      <TaskOptionsSheet
+        open={optionsOpen}
+        onClose={() => setOptionsOpen(false)}
+        onOpenHistory={() => toast.show('Taches terminees a venir', 'info')}
+        onOpenTrash={() => toast.show('Corbeille a venir', 'info')}
       />
 
       {/* Nav mois */}
@@ -210,11 +239,12 @@ export function TodoScreen(props: TodoScreenProps) {
         <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--cm-title)' }}>{t('todoTitle')}</h2>
         <button
           type="button"
+          onClick={() => setAddOpen(true)}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '8px 14px', borderRadius: 14,
-            background: 'var(--cm-surface)', border: '1px solid var(--cm-line)',
-            color: 'var(--cm-title)', fontWeight: 700, fontSize: 13,
+            background: theme.primarySoft, border: 'none',
+            color: theme.primaryDark, fontWeight: 700, fontSize: 13,
             fontFamily: 'inherit', cursor: 'pointer',
           }}
         >
@@ -240,6 +270,14 @@ export function TodoScreen(props: TodoScreenProps) {
         ))}
       </div>
 
+      {/* Sheet : ajouter une tache */}
+      <AddTaskSheet
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        initialDate={isoDate(selected)}
+        onCreated={() => setRefreshKey((k) => k + 1)}
+      />
+
       {/* Liste taches */}
       <ul style={{ listStyle: 'none', padding: '0 16px', margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
         {tasks.length === 0 && <li style={{ color: 'var(--cm-muted)', textAlign: 'center', padding: 40 }}>—</li>}
@@ -255,7 +293,13 @@ export function TodoScreen(props: TodoScreenProps) {
           >
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--cm-title)' }}>{task.title}</div>
-              {task.sharedWith.length > 0 && <div style={{ fontSize: 12, color: 'var(--cm-sub)' }}>with {task.sharedWith.join(', ')}</div>}
+              {/* Nom de la personne assignee (Moi si sharedWith vide, sinon le contact) */}
+              <div style={{ fontSize: 12, color: 'var(--cm-sub)', marginTop: 2 }}>
+                {task.sharedWith.length === 0
+                  ? `avec ${user?.name ?? 'Moi'}`
+                  : task.sharedWith.map((uid) => getContactById(uid)?.name ?? uid).map((name) => `avec ${name}`).join(', ')
+                }
+              </div>
             </div>
             <div style={{ textAlign: 'right', fontSize: 12, color: 'var(--cm-sub)' }}>
               {task.location && <div>📍 {task.location}</div>}
