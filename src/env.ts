@@ -1,9 +1,8 @@
 /**
- * Variables d'environnement typees + validation au demarrage.
- * Empeche l'app de demarrer si une var critique manque en prod.
+ * Variables d'environnement typees.
+ * On NE throw JAMAIS au top-level : si Firebase n'est pas configure,
+ * l'app fonctionne en mode local (localStorage uniquement) avec un warn.
  */
-
-import { IS_PROD } from './config';
 
 export interface AppEnv {
   readonly firebase: {
@@ -17,24 +16,25 @@ export interface AppEnv {
   };
 }
 
-function req(key: string, value: string | undefined, required: boolean): string {
-  if (!value) {
-    if (required) {
-      throw new Error(`[env] Variable VITE_${key} manquante (requise en prod).`);
-    }
-    return '';
-  }
-  return value;
+function safe(value: string | undefined): string {
+  return value ?? '';
 }
 
 export const env: AppEnv = {
   firebase: {
-    apiKey: req('FB_API_KEY', import.meta.env.VITE_FB_API_KEY, IS_PROD),
-    authDomain: req('FB_AUTH_DOMAIN', import.meta.env.VITE_FB_AUTH_DOMAIN, IS_PROD),
-    projectId: req('FB_PROJECT_ID', import.meta.env.VITE_FB_PROJECT_ID, IS_PROD),
-    storageBucket: req('FB_STORAGE_BUCKET', import.meta.env.VITE_FB_STORAGE_BUCKET, IS_PROD),
-    messagingSenderId: req('FB_MESSAGING_ID', import.meta.env.VITE_FB_MESSAGING_ID, IS_PROD),
-    appId: req('FB_APP_ID', import.meta.env.VITE_FB_APP_ID, IS_PROD),
+    apiKey: safe(import.meta.env.VITE_FB_API_KEY),
+    authDomain: safe(import.meta.env.VITE_FB_AUTH_DOMAIN),
+    projectId: safe(import.meta.env.VITE_FB_PROJECT_ID),
+    storageBucket: safe(import.meta.env.VITE_FB_STORAGE_BUCKET),
+    messagingSenderId: safe(import.meta.env.VITE_FB_MESSAGING_ID),
+    appId: safe(import.meta.env.VITE_FB_APP_ID),
     vapidKey: import.meta.env.VITE_FB_VAPID || null,
   },
 };
+
+/** True si Firebase est configure (sinon on reste en mode local). */
+export const IS_FIREBASE_CONFIGURED = env.firebase.apiKey !== '';
+
+if (!IS_FIREBASE_CONFIGURED) {
+  console.warn('[env] Firebase non configure — mode local (localStorage) active.');
+}

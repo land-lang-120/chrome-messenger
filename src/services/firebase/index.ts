@@ -27,7 +27,8 @@ let _storage: FirebaseStorage | null = null;
 export function initFirebase(): FirebaseApp | null {
   if (_app) return _app;
   if (!env.firebase.apiKey) {
-    if (IS_PROD) throw new Error('Firebase config missing in prod.');
+    // Pas de config Firebase : l'app fonctionne en mode local (localStorage).
+    // Ne JAMAIS throw ici — ca bloquerait le montage React.
     console.warn('[firebase] Config absente — mode local only (localStorage).');
     return null;
   }
