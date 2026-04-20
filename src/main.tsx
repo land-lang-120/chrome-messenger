@@ -82,11 +82,11 @@ class RootErrorBoundary extends Component<{ children: ReactNode }, { err: Error 
 }
 
 /* =============================================================
-   SAFETY NET : cache le splash apres 3s max, quoi qu'il arrive
+   SAFETY NET : cache le splash apres 5s max, quoi qu'il arrive
    ============================================================= */
 window.setTimeout(() => {
   hideSplash();
-}, 3000);
+}, 5000);
 
 /* =============================================================
    MONTAGE REACT
@@ -106,8 +106,8 @@ if (!container) {
         </RootErrorBoundary>
       </StrictMode>,
     );
-    // Cache le splash apres un court delai pour laisser React render
-    window.setTimeout(hideSplash, 600);
+    // Duree splash : 2500ms (confortable pour voir le logo + titre)
+    window.setTimeout(hideSplash, 2500);
   } catch (err) {
     console.error('[Chrome Messenger] createRoot failed:', err);
     hideSplash();

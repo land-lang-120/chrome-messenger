@@ -129,16 +129,18 @@ export function OnboardingScreen() {
       <div style={containerStyle}>
         <div style={centerStyle}>
           <ChameleonLogo size={200} />
-          <h1 style={{ fontSize: 16, fontWeight: 600, color: 'var(--cm-sub)', margin: '28px 0 6px' }}>
-            {t('welcome')}
+          {/* Phrase unifiee : Bienvenue sur Chrome Messenger, la messagerie qui s'adapte a toi */}
+          <h1
+            style={{
+              fontSize: 26, fontWeight: 800, color: 'var(--cm-title)',
+              margin: '32px 0 14px', letterSpacing: '-0.3px',
+              textAlign: 'center', maxWidth: 340, lineHeight: 1.25,
+            }}
+          >
+            Bienvenue sur <span style={{ color: 'var(--cm-primary)' }}>Chrome Messenger</span>,
+            la messagerie qui s'adapte à toi.
           </h1>
-          <h2 style={{ fontSize: 32, fontWeight: 800, color: 'var(--cm-title)', margin: '0 0 12px', letterSpacing: '-0.5px' }}>
-            {t('appName')}
-          </h2>
-          <p style={{ fontSize: 15, color: 'var(--cm-sub)', margin: '0 0 40px', maxWidth: 320, lineHeight: 1.5 }}>
-            {t('welcomeSub')}
-          </p>
-          <Button variant="primary" size="lg" fullWidth style={{ maxWidth: 320 }} onClick={() => setStep('phone')}>
+          <Button variant="primary" size="lg" fullWidth style={{ maxWidth: 320, marginTop: 28 }} onClick={() => setStep('phone')}>
             {t('getStarted')}
           </Button>
         </div>
@@ -150,27 +152,68 @@ export function OnboardingScreen() {
   const headingStyle: React.CSSProperties = { fontSize: 24, fontWeight: 800, color: 'var(--cm-title)', marginBottom: 8, textAlign: 'center' };
   const subStyle: React.CSSProperties = { fontSize: 14, color: 'var(--cm-sub)', marginBottom: 28, textAlign: 'center' };
 
+  // Back button positionne un peu plus bas (marge haute + safe-area top)
+  const backBtnStyle: React.CSSProperties = {
+    marginTop: 'max(20px, env(safe-area-inset-top))',
+    alignSelf: 'flex-start',
+  };
+
   if (step === 'phone') {
+    // Separe le prefix pays du numero saisi pour que le prefix reste TOUJOURS visible
+    const COUNTRY_PREFIX = '+237 ';
+    const phoneDigits = phone.startsWith(COUNTRY_PREFIX)
+      ? phone.slice(COUNTRY_PREFIX.length)
+      : phone.replace(/^\+/, '');
     return (
       <div style={containerStyle}>
-        <IconButton label={t('back')} onClick={() => setStep('welcome')}>
-          <IconBack />
-        </IconButton>
+        <div style={backBtnStyle}>
+          <IconButton label={t('back')} onClick={() => setStep('welcome')}>
+            <IconBack />
+          </IconButton>
+        </div>
         <div style={centerStyle}>
           <ChameleonLogo size={130} />
           <div style={{ height: 28 }} />
           <h2 style={headingStyle}>{t('enterPhone')}</h2>
           <p style={subStyle}>{t('phoneDesc')}</p>
-          <div style={{ width: '100%', maxWidth: 360 }}>
-            <Input
+          <div
+            style={{
+              width: '100%', maxWidth: 360,
+              display: 'flex', alignItems: 'center', gap: 0,
+              background: 'var(--cm-surface, #F8FAFC)',
+              border: '1px solid var(--cm-line, #E3E8EE)',
+              borderRadius: 14,
+              padding: '0 14px',
+              minHeight: 52,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 16, fontWeight: 700, color: 'var(--cm-title)',
+                paddingRight: 8, borderRight: '1px solid var(--cm-line, #E3E8EE)',
+                marginRight: 10, lineHeight: '52px',
+              }}
+            >
+              +237
+            </span>
+            <input
               type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder={t('phonePlaceholder')}
-              error={err ?? undefined}
+              value={phoneDigits}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '').slice(0, 12);
+                setPhone('+237' + digits);
+              }}
+              placeholder="6XX XX XX XX"
               autoFocus
+              style={{
+                flex: 1, border: 'none', outline: 'none',
+                background: 'transparent', fontSize: 16, fontWeight: 500,
+                color: 'var(--cm-title)', fontFamily: 'inherit',
+                padding: '14px 0',
+              }}
             />
           </div>
+          {err && <p style={{ color: '#FF4757', fontSize: 13, marginTop: 10 }}>{err}</p>}
           <div id="recaptcha-container" />
         </div>
         <Button variant="primary" size="lg" fullWidth loading={loading} onClick={() => void sendOtpHandler()}>
@@ -183,9 +226,11 @@ export function OnboardingScreen() {
   if (step === 'otp') {
     return (
       <div style={containerStyle}>
-        <IconButton label={t('back')} onClick={() => setStep('phone')}>
-          <IconBack />
-        </IconButton>
+        <div style={backBtnStyle}>
+          <IconButton label={t('back')} onClick={() => setStep('phone')}>
+            <IconBack />
+          </IconButton>
+        </div>
         <div style={centerStyle}>
           <ChameleonLogo size={130} />
           <div style={{ height: 28 }} />
@@ -202,9 +247,31 @@ export function OnboardingScreen() {
               autoFocus
             />
           </div>
+
+          {/* DEMO : le vrai SMS n'est pas encore branche (Firebase a venir).
+              On affiche le code demo de maniere permanente, tapable pour auto-remplir. */}
+          <button
+            type="button"
+            onClick={() => setCode('123456')}
+            style={{
+              marginTop: 18,
+              padding: '12px 16px', borderRadius: 12,
+              background: 'var(--cm-primary-soft, #D5F8EB)',
+              color: 'var(--cm-primary-dark, #1FAE7C)',
+              border: 'none', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
+              display: 'inline-flex', alignItems: 'center', gap: 8, maxWidth: 340,
+              textAlign: 'left',
+            }}
+          >
+            <span aria-hidden>💡</span>
+            <span>Version demo — code a saisir : <b>123456</b> (taper pour remplir auto)</span>
+          </button>
+
           <button
             onClick={() => void sendOtpHandler()}
             style={{
+              marginTop: 14,
               background: 'transparent', border: 'none',
               color: 'var(--cm-primary)', fontFamily: 'inherit',
               fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '10px 0',
@@ -228,9 +295,11 @@ export function OnboardingScreen() {
   // step === 'profile'
   return (
     <div style={containerStyle}>
-      <IconButton label={t('back')} onClick={() => setStep('otp')}>
-        <IconBack />
-      </IconButton>
+      <div style={backBtnStyle}>
+        <IconButton label={t('back')} onClick={() => setStep('otp')}>
+          <IconBack />
+        </IconButton>
+      </div>
       <div style={centerStyle}>
         <ChameleonLogo size={130} />
         <div style={{ height: 28 }} />
