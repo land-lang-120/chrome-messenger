@@ -12,6 +12,7 @@
   "navigationDividerColorDark": "#0A0E14",
   "backgroundColor": "#FFFFFF",
   "enableNotifications": true,
+  "splashScreenFadeOutDuration": 300,
   "startUrl": "/chrome-messenger/",
   "iconUrl": "https://land-lang-120.github.io/chrome-messenger/icons/icon-512.svg",
   "maskableIconUrl": "https://land-lang-120.github.io/chrome-messenger/icons/icon-512.svg",
