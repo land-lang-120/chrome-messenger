@@ -63,6 +63,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         working-directory: android
         run: |
+          chmod +x ./gradlew
           cat >> gradle.properties <<EOF
           CM_STORE_FILE=android.keystore
           CM_STORE_PASSWORD=${KEYSTORE_PASSWORD}
