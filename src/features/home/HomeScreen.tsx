@@ -80,10 +80,10 @@ export function HomeScreen(props: HomeScreenProps) {
       />
 
       {/* Statuts */}
-      <section style={{ padding: '6px 0 0' }}>
-        <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--cm-title)', margin: '0 16px 12px' }}>{t('stories')}</h2>
+      <section style={{ padding: '4px 0 0' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--cm-title)', margin: '0 16px 8px' }}>{t('stories')}</h2>
         {/* Zone scrollable qui atteint le bord de l'ecran pour ne pas masquer la derniere tuile */}
-        <div className="cm-scroll-x" style={{ display: 'flex', gap: 10, padding: '0 16px 4px' }}>
+        <div className="cm-scroll-x" style={{ display: 'flex', gap: 10, padding: '0 16px 0' }}>
           {/* Tuile Ajouter */}
           <button
             type="button"
@@ -112,7 +112,7 @@ export function HomeScreen(props: HomeScreenProps) {
                 onClick={() => props.onOpenStory(s.id)}
                 role="button"
                 tabIndex={0}
-                style={{ flexShrink: 0, width: 72, cursor: 'pointer', paddingBottom: 22 }}
+                style={{ flexShrink: 0, width: 72, cursor: 'pointer', paddingBottom: 4 }}
               >
                 <div
                   style={{
@@ -134,8 +134,8 @@ export function HomeScreen(props: HomeScreenProps) {
                 </div>
                 <div
                   style={{
-                    marginTop: 22, textAlign: 'center', lineHeight: 1.2,
-                    color: 'var(--cm-title)', fontSize: 13, fontWeight: 700,
+                    marginTop: 18, textAlign: 'center', lineHeight: 1.2,
+                    color: 'var(--cm-title)', fontSize: 12, fontWeight: 700,
                     width: 72, maxWidth: 72,
                   }}
                 >
@@ -153,8 +153,8 @@ export function HomeScreen(props: HomeScreenProps) {
       </section>
 
       {/* Discussions */}
-      <section style={{ padding: '6px 16px 8px' }}>
-        <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--cm-title)', margin: '0 0 10px' }}>{t('discussions')}</h2>
+      <section style={{ padding: '0 16px 4px' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--cm-title)', margin: '0 0 8px' }}>{t('discussions')}</h2>
 
         <div
           style={{
